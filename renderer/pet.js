@@ -14,12 +14,15 @@ const doneStamp = $('done-stamp');
 const errorBox = $('error-box');
 const achievementStrip = $('achievement-strip');
 const scrapbook = $('scrapbook');
+const catNest = $('cat-nest');
 const notesPanel = $('notes-panel');
 const noteInput = $('note-input');
 const noteList = $('note-list');
 const focusPact = $('focus-pact');
 const focusTime = $('focus-time');
 const helpSign = $('help-sign');
+const nextNote = $('next-note');
+const workProp = $('work-prop');
 let currentStats = { sessions: [] };
 let bubbleTimer = null;
 let stampTimer = null;
@@ -34,6 +37,7 @@ let focusTimer = null;
 let theaterTimer = null;
 let petTapCount = 0;
 let petTapTimer = null;
+let weeklyPostcardBusy = false;
 
 const images = {
   idle: ['candidate-09.gif', 'candidate-02.gif', 'candidate-01.gif'],
@@ -56,8 +60,8 @@ function localDay() {
 
 function dailyStore() {
   const key = `llmpet-cat-day-${localDay()}`;
-  try { return { key, data: JSON.parse(localStorage.getItem(key)) || { completed: 0, failures: 0, notes: [], achievements: [] } }; }
-  catch { return { key, data: { completed: 0, failures: 0, notes: [], achievements: [] } }; }
+  try { return { key, data: JSON.parse(localStorage.getItem(key)) || { completed: 0, failures: 0, notes: [], stickers: [], nestItems: [], focusPacts: 0, breaks: 0 } }; }
+  catch { return { key, data: { completed: 0, failures: 0, notes: [], stickers: [], nestItems: [], focusPacts: 0, breaks: 0 } }; }
 }
 
 function saveDaily(data) {
@@ -65,17 +69,23 @@ function saveDaily(data) {
   renderNotesAndAchievements(data);
 }
 
-function addAchievement(data, id, label) {
-  if (!data.achievements.some((item) => item.id === id)) data.achievements.push({ id, label });
+function prepareDaily(data) {
+  data.notes ||= []; data.stickers ||= []; data.nestItems ||= [];
+  data.focusPacts ||= 0; data.breaks ||= 0; data.failures ||= 0; data.completed ||= 0;
+  return data;
 }
 
 function renderNotesAndAchievements(data = dailyStore().data) {
-  data.achievements ||= []; data.notes ||= []; data.stickers ||= [];
-  achievementStrip.textContent = data.achievements.length ? `今日贴纸：${data.achievements.map((item) => item.label).join(' · ')}` : '今日贴纸：完成任务就会慢慢收集哦。';
+  prepareDaily(data);
+  achievementStrip.textContent = `今日节奏 · 完成 ${data.completed} · 专注 ${data.focusPacts} · 小憩 ${data.breaks}`;
   const recent = data.stickers.slice(-8);
   scrapbook.textContent = recent.length
     ? `今日纪念册 · ${recent.map((item) => item.icon).join(' ')}  完成 ${data.completed} 件事`
     : '今日纪念册 · 等待第一枚完成小贴纸';
+  const nest = data.nestItems.slice(-9);
+  catNest.textContent = nest.length
+    ? `🪺 今日猫窝 ${nest.map((item) => item.icon).join(' ')} · 猫猫把战利品摆好了`
+    : '🪺 今日猫窝 · 等待第一件战利品';
   noteList.innerHTML = '';
   if (!data.notes.length) { noteList.textContent = '还没有便签，记下一件小事吧。'; return; }
   data.notes.forEach((note, index) => {
@@ -90,24 +100,23 @@ function renderNotesAndAchievements(data = dailyStore().data) {
   });
 }
 
-function recordCompletion(task = '') {
+function recordCompletion(item = { icon: '🚩', label: '完成小旗子' }) {
   const store = dailyStore(); const data = store.data;
-  data.stickers ||= [];
+  prepareDaily(data);
   data.completed += 1; data.failures = 0;
   const icons = ['🐟', '⭐', '🧶', '🌸', '🍀', '🧸'];
-  data.stickers.push({ icon: icons[(data.completed - 1) % icons.length], task: String(task).slice(0, 28), at: Date.now() });
+  data.stickers.push({ icon: icons[(data.completed - 1) % icons.length], at: Date.now() });
+  data.nestItems.push({ icon: item.icon || '🚩', label: item.label || '完成小旗子', at: Date.now() });
   if (data.stickers.length > 24) data.stickers = data.stickers.slice(-24);
-  const milestones = { 3: '三连完成', 5: '任务达人', 10: '十全十美' };
-  if (milestones[data.completed]) addAchievement(data, `complete-${data.completed}`, milestones[data.completed]);
-  if (new Date().getHours() >= 21) addAchievement(data, 'night-owl', '夜猫子');
+  if (data.nestItems.length > 30) data.nestItems = data.nestItems.slice(-30);
   const pending = data.notes.find((note) => !note.done);
   if (pending) pending.done = true;
   saveDaily(data);
-  return milestones[data.completed] || null;
+  return data.completed;
 }
 
 function recordFailure() {
-  const store = dailyStore(); store.data.failures += 1; saveDaily(store.data); return store.data.failures;
+  const store = dailyStore(); prepareDaily(store.data); store.data.failures += 1; saveDaily(store.data); return store.data.failures;
 }
 
 function difficultyFor(sessions) {
@@ -236,28 +245,64 @@ function finishFocusPact() {
 
 function showHelpSign() {
   helpSign.classList.remove('hidden');
+  nextNote.classList.remove('hidden');
 }
 
 function hideHelpSign() {
   helpSign.classList.add('hidden');
+  nextNote.classList.add('hidden');
+}
+
+function setWorkProp(prop) {
+  if (!prop || !prop.icon) return;
+  workProp.textContent = prop.icon;
+  workProp.title = prop.label || '';
+  workProp.classList.remove('hidden');
+}
+
+function clearWorkProp() {
+  workProp.classList.add('hidden');
+  workProp.textContent = '';
+}
+
+function recordBreak() {
+  const store = dailyStore();
+  prepareDaily(store.data);
+  store.data.breaks += 1;
+  saveDaily(store.data);
+}
+
+function recordFocusPact() {
+  const store = dailyStore();
+  prepareDaily(store.data);
+  store.data.focusPacts += 1;
+  saveDaily(store.data);
 }
 
 function reactToPetTap() {
   petTapCount += 1;
   clearTimeout(petTapTimer);
-  if (petTapCount >= 3) {
+  const hour = new Date().getHours();
+  if (petTapCount >= 5) {
     petTapCount = 0;
+    catShell.dataset.trick = 'yarn';
+    showBubble('毛线球出现！', '猫猫开启追球秘密动作。', 2600);
+    setTimeout(() => delete catShell.dataset.trick, 1900);
+    return;
+  }
+  if (petTapCount === 3) {
     catShell.classList.remove('petted');
     catShell.classList.add('belly');
-    showBubble('这里最软软的地方只给你摸哦。', '猫猫翻肉肠开心一下！', 2600);
+    showBubble('这里最软软的地方只给你摸哦。', '再摸两下，也许会发现秘密。', 2600);
     setTimeout(() => catShell.classList.remove('belly'), 1300);
     return;
   }
   catShell.classList.remove('belly');
   catShell.classList.add('petted');
-  showBubble('喵呜～', '摸摸收到了。', 1800);
+  const detail = hour < 11 ? '早上好，先伸个懒腰吧。' : hour >= 21 || hour < 6 ? '夜里也要轻轻地摸哦，猫猫快困了。' : '摸摸收到了，猫猫继续陪你。';
+  showBubble('喵呜～', detail, 1800);
   setTimeout(() => catShell.classList.remove('petted'), 700);
-  petTapTimer = setTimeout(() => { petTapCount = 0; }, 650);
+  petTapTimer = setTimeout(() => { petTapCount = 0; }, 1100);
 }
 
 function dominantState(sessions, userWorking) {
@@ -310,6 +355,7 @@ function render(stats) {
   }
   if (!sessions.length) list.textContent = '暂无 Codex 会话，猫猫正在待机。';
   showDailyReport(nextAggregate, sessions);
+  maybeCreateWeeklyPostcard(nextAggregate, sessions);
 }
 
 function applyTimeTheme() {
@@ -339,8 +385,83 @@ function showDailyReport(state, sessions) {
   const key = `llmpet-cat-report-${localDay()}`;
   if (localStorage.getItem(key)) return;
   localStorage.setItem(key, '1');
-  const data = dailyStore().data;
-  setTimeout(() => showBubble('今天的猫猫战绩。', `今天一起完成了 ${data.completed} 个任务，辛苦啦！`, 6500, true), 900);
+  const data = prepareDaily(dailyStore().data);
+  const nest = data.nestItems.slice(-6).map((item) => item.icon).join(' ');
+  setTimeout(() => showBubble('今天的猫猫小窝摆好了。', `今天一起完成了 ${data.completed} 个任务 ${nest || '🪺'}，辛苦啦！`, 6500, true), 900);
+}
+
+function dayKeyForOffset(offset) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + offset);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function currentWeekKey() {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function dailyDataFor(day) {
+  try { return prepareDaily(JSON.parse(localStorage.getItem(`llmpet-cat-day-${day}`)) || {}); }
+  catch { return prepareDaily({}); }
+}
+
+function weeklySummary() {
+  const days = Array.from({ length: 7 }, (_, index) => dailyDataFor(dayKeyForOffset(index - 6)));
+  return {
+    completed: days.reduce((total, data) => total + data.completed, 0),
+    focusPacts: days.reduce((total, data) => total + data.focusPacts, 0),
+    breaks: days.reduce((total, data) => total + data.breaks, 0),
+    items: days.flatMap((data) => data.nestItems).slice(-12),
+  };
+}
+
+function postcardDataUrl(summary) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200; canvas.height = 720;
+  const ctx = canvas.getContext('2d');
+  const bg = ctx.createLinearGradient(0, 0, 1200, 720);
+  bg.addColorStop(0, '#fff2dd'); bg.addColorStop(1, '#f7c9bd');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(255,255,255,.58)'; ctx.beginPath(); ctx.roundRect(48, 48, 1104, 624, 42); ctx.fill();
+  ctx.fillStyle = '#754b3a'; ctx.font = 'bold 52px "Microsoft YaHei UI"'; ctx.fillText('猫猫本周明信片', 96, 142);
+  ctx.fillStyle = '#a56b50'; ctx.font = '30px "Microsoft YaHei UI"'; ctx.fillText(`这周的我们，也很了不起。  ${currentWeekKey()}`, 98, 193);
+  ctx.font = '84px "Segoe UI Emoji", "Microsoft YaHei UI"'; ctx.fillText('🐱', 960, 164);
+  const stats = [['完成任务', summary.completed], ['专注契约', summary.focusPacts], ['小憩时刻', summary.breaks]];
+  stats.forEach(([label, value], index) => {
+    const x = 105 + index * 330;
+    ctx.fillStyle = '#ffe7cb'; ctx.beginPath(); ctx.roundRect(x, 252, 282, 140, 26); ctx.fill();
+    ctx.fillStyle = '#8b5c45'; ctx.font = '28px "Microsoft YaHei UI"'; ctx.fillText(label, x + 26, 302);
+    ctx.fillStyle = '#c05d43'; ctx.font = 'bold 65px "Microsoft YaHei UI"'; ctx.fillText(String(value), x + 26, 370);
+  });
+  ctx.fillStyle = '#8a5b43'; ctx.font = 'bold 30px "Microsoft YaHei UI"'; ctx.fillText('猫窝收藏', 102, 472);
+  ctx.font = '54px "Segoe UI Emoji", "Microsoft YaHei UI"'; ctx.fillText(summary.items.length ? summary.items.map((item) => item.icon).join(' ') : '🪺 🧶 🐟', 105, 550);
+  ctx.fillStyle = '#a56b50'; ctx.font = '26px "Microsoft YaHei UI"'; ctx.fillText('保存在本机图片文件夹 · 不上传任何数据', 102, 625);
+  return canvas.toDataURL('image/png');
+}
+
+async function createWeeklyPostcard(automatic = false) {
+  if (weeklyPostcardBusy) return;
+  weeklyPostcardBusy = true;
+  try {
+    const filePath = await window.pet.savePostcard(postcardDataUrl(weeklySummary()), currentWeekKey());
+    if (automatic) localStorage.setItem(`llmpet-cat-week-postcard-${currentWeekKey()}`, '1');
+    showBubble('本周明信片已完成。', `猫猫已经存好了：${filePath || '图片\\LLMPET Cat'}`, 7000, true);
+  } catch {
+    showBubble('明信片没有保存成功。', '猫猫会等你下次再试。', 4500);
+  } finally {
+    weeklyPostcardBusy = false;
+  }
+}
+
+function maybeCreateWeeklyPostcard(state, sessions) {
+  const now = new Date();
+  if (now.getDay() !== 0 || now.getHours() < 20 || state !== 'idle' || sessions.some((s) => s.state !== 'idle')) return;
+  const key = `llmpet-cat-week-postcard-${currentWeekKey()}`;
+  if (!localStorage.getItem(key)) createWeeklyPostcard(true);
 }
 
 window.pet.onStats(render);
@@ -353,6 +474,7 @@ window.pet.onEvent((e) => {
   }
   else if (e.kind === 'focus-finish') {
     finishFocusPact();
+    recordFocusPact();
     showState('happy');
     playTheater('crown', 6000);
     showStamp();
@@ -365,17 +487,18 @@ window.pet.onEvent((e) => {
   else if (e.kind === 'needs-input') {
     showState('thinking');
     showHelpSign();
-    showBubble('这一步需要你决定哦。', e.task ? `关于“${e.task}”，回一句话猫猫就能继续陪你做下去。` : '回一句话，猫猫就能继续陪你做下去。', 12000, true);
+    showBubble('这一步需要你决定哦。', '可能是“要继续吗？”或“选 A 还是 B？”，点下便签就回去回复 Codex。', 12000, true);
   }
   else if (e.kind === 'break-water') {
-    const store = dailyStore(); addAchievement(store.data, 'hydrated', '💧 喝水打卡'); saveDaily(store.data);
+    recordBreak();
     showBubble('水分已补充！', '猫猫也在空气里喝了一口水。', 4200, true);
   }
   else if (e.kind === 'break-breathe') {
-    const store = dailyStore(); addAchievement(store.data, '三十秒呼吸', '🌿 呼吸小休'); saveDaily(store.data);
+    recordBreak();
     showBubble('做得好。', '肉肉和脑袋都获得了 30 秒休息。', 4200, true);
   }
   else if (e.kind === 'break-find-cat') {
+    recordBreak();
     showBubble('找到猫猫啦！', '小小的胜利也是休息的一部分。', 4200, true);
   }
   else if (e.kind === 'next-gif') {
@@ -383,20 +506,32 @@ window.pet.onEvent((e) => {
     scheduleGifRotation();
     showBubble('猫猫换了个动作。', '每次都想给你一点新鲜感！', 3200);
   }
+  else if (e.kind === 'patrol-start') {
+    showState('companion');
+    workProp.textContent = '🧶 巡逻中';
+    workProp.classList.remove('hidden');
+    catShell.dataset.trick = 'yarn';
+  }
+  else if (e.kind === 'patrol-end') {
+    clearWorkProp();
+    delete catShell.dataset.trick;
+    if (aggregateState === 'idle') showState('idle');
+  }
   else if (e.kind === 'turn-done') {
     showState('happy');
     showStamp();
     hideHelpSign();
-    const streak = recordCompletion(e.task || e.project || 'Codex');
+    const completed = recordCompletion(e.item);
     if (new Date().getHours() >= 21) playTheater('nightcap', 8500);
     else if (dailyStore().data.completed % 3 === 0) playTheater('crown', 7000);
-    const extra = streak ? ` 连胜贴纸「${streak}」到手！` : '';
-    showBubble(`「${e.task || e.project || '这个任务'}」完成了哦！`, `${e.detail || ''}${extra}`, 11000, true);
+    const extra = e.item ? ` 猫窝里多了 ${e.item.icon} ${e.item.label}！` : '';
+    showBubble('任务完成了哦！', `${e.detail || ''}今日第 ${completed} 件。${extra}`, 11000, true);
   }
-  else if (e.kind === 'greet') { showState('greet'); showBubble(`开始关注 ${e.project || 'Codex'}。`, '', 3000); }
-  else if (e.kind === 'operation') showState('working');
+  else if (e.kind === 'greet') { clearWorkProp(); showState('greet'); showBubble(`开始关注 ${e.project || 'Codex'}。`, '', 3000); }
+  else if (e.kind === 'operation') { showState('working'); setWorkProp(e.item); }
   else if (e.kind === 'user-turn') {
     hideHelpSign();
+    clearWorkProp();
     showState('thinking');
     const task = String(e.task || e.project || '新任务');
     const easter = /加油/.test(task) ? '收到加油，猫猫能量满格！' : /辛苦/.test(task) ? '你也辛苦啦，猫猫陪你一起做。' : /休息/.test(task) ? '好呀，休息也要认真休息。' : '猫猫开始认真处理啦。';
@@ -436,7 +571,6 @@ window.pet.onEvent((e) => {
     setTimeout(applyTimeTheme, 3900);
   }
   else if (e.kind === 'break-reminder') {
-    const store = dailyStore(); addAchievement(store.data, 'long-focus', '长时专注'); saveDaily(store.data);
     showBubble('40 分钟专注达成！', '猫猫已经把休息卡送到屏幕中央啦。', 5000, true);
   }
   else if (e.kind === 'rest-voucher') {
@@ -480,6 +614,11 @@ $('close').addEventListener('click', () => panel.classList.add('hidden'));
 $('notes-toggle').addEventListener('click', () => { notesPanel.classList.toggle('hidden'); renderNotesAndAchievements(); });
 $('focus-25').addEventListener('click', () => window.pet.startFocus(25));
 $('focus-50').addEventListener('click', () => window.pet.startFocus(50));
+$('postcard-save').addEventListener('click', () => createWeeklyPostcard(false));
+nextNote.addEventListener('click', () => {
+  hideHelpSign();
+  window.pet.focusCodex();
+});
 $('note-add').addEventListener('click', () => {
   const text = noteInput.value.trim(); if (!text) return;
   const store = dailyStore(); store.data.notes.push({ text, done: false }); noteInput.value = ''; saveDaily(store.data);

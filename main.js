@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, shell, globalShortcut, powerMonitor } = require('electron');
 const config = require('./backend/config');
@@ -44,6 +45,9 @@ let voucherTimer = null;
 const taskToolCounts = new Map();
 let focusPact = null;
 let focusPactTimer = null;
+let lastPetDragAt = Date.now();
+let patrolActive = false;
+let patrolTimers = [];
 
 function frontendConfig() {
   const c = config.get();
@@ -303,17 +307,18 @@ function activityEvents(act) {
     return [{ kind: 'needs-input', project, task: String(s.sessionTitle || project).slice(0, 52) }];
   }
   if (act.event === 'PreToolUse') {
-    taskToolCounts.set(s.id, (taskToolCounts.get(s.id) || 0) + 1);
+    const toolCalls = (taskToolCounts.get(s.id) || 0) + 1;
+    taskToolCounts.set(s.id, toolCalls);
     if (/request[_-]?user[_-]?input|ask[_-]?user|user[_-]?input/i.test(s.lastEventTool || '')) {
-      return [{ kind: 'needs-input', project, task: String(s.sessionTitle || project).slice(0, 52) }];
+      return [{ kind: 'needs-input', project }];
     }
-    return [{ kind: 'operation', project, tool: s.lastEventTool || 'tool' }];
+    return [{ kind: 'operation', project, tool: s.lastEventTool || 'tool', item: taskProp(s.lastEventTool, toolCalls) }];
   }
   if (act.event === 'Error') return [{ kind: 'task-error', project, task: String(s.sessionTitle || project).slice(0, 52) }];
   if (act.event === 'Stop' && act.realCompletion) {
     const task = String(s.sessionTitle || project).replace(/\s+/g, ' ').trim().slice(0, 52);
     const detail = String(s.assistantLastOutput || '').replace(/\s+/g, ' ').trim().slice(0, 220);
-    return [{ kind: 'turn-done', project, task, detail }];
+    return [{ kind: 'turn-done', project, task, detail, item: taskProp(s.lastEventTool, taskToolCounts.get(s.id) || 0) }];
   }
   return [];
 }
@@ -427,16 +432,84 @@ function startCursorLookWatch() {
   }, 4 * 1000);
 }
 
+function taskProp(toolName, toolCalls) {
+  const tool = String(toolName || '');
+  if (Number(toolCalls) >= 6) return { icon: '☕', label: '长任务咖啡' };
+  if (/web|search|browser|fetch|research/i.test(tool)) return { icon: '🔍', label: '查资料放大镜' };
+  if (/write|edit|apply[_-]?patch|shell|command|exec|file/i.test(tool)) return { icon: '⌨️', label: '写代码键盘' };
+  return { icon: '🚩', label: '完成小旗子' };
+}
+
+function stopPatrol() {
+  for (const timer of patrolTimers) clearTimeout(timer);
+  patrolTimers = [];
+  if (!patrolActive) return;
+  patrolActive = false;
+  send('pet:event', { kind: 'patrol-end', ts: Date.now() });
+}
+
+function patrolOnce() {
+  if (!win || win.isDestroyed() || patrolActive || hasActiveCodexWork() || isUserWorking()) return;
+  // A user drag should always win over the little patrol routine.
+  if (Date.now() - lastPetDragAt < 2 * 60 * 1000 || Math.random() > 0.42) return;
+  const bounds = win.getBounds();
+  const display = screen.getDisplayNearestPoint({ x: bounds.x + 20, y: bounds.y + 20 });
+  const area = display.workArea;
+  const direction = Math.random() < 0.5 ? -1 : 1;
+  const distance = direction * (38 + Math.floor(Math.random() * 28));
+  const targetX = Math.max(area.x, Math.min(area.x + area.width - bounds.width, bounds.x + distance));
+  if (targetX === bounds.x) return;
+  patrolActive = true;
+  send('pet:event', { kind: 'patrol-start', ts: Date.now() });
+  const steps = 3;
+  for (let index = 1; index <= steps; index += 1) {
+    patrolTimers.push(setTimeout(() => {
+      if (!win || win.isDestroyed() || !patrolActive) return;
+      win.setPosition(Math.round(bounds.x + ((targetX - bounds.x) * index) / steps), bounds.y);
+      if (index === steps) {
+        patrolTimers.push(setTimeout(stopPatrol, 900));
+      }
+    }, index * 360));
+  }
+}
+
+function startPatrolWatch() {
+  setInterval(patrolOnce, 45 * 1000);
+}
+
+function savePostcard(dataUrl, weekKey) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(weekKey))) throw new Error('Invalid postcard week');
+  const match = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!match) throw new Error('Invalid postcard data');
+  const content = Buffer.from(match[1], 'base64');
+  if (content.length === 0 || content.length > 4 * 1024 * 1024) throw new Error('Invalid postcard size');
+  const directory = path.join(app.getPath('pictures'), 'LLMPET Cat');
+  fs.mkdirSync(directory, { recursive: true });
+  const filePath = path.join(directory, `LLMPET-Cat-Weekly-${weekKey}.png`);
+  fs.writeFileSync(filePath, content);
+  return filePath;
+}
+
+function returnToPreviousApp() {
+  if (!win || win.isDestroyed()) return;
+  win.blur();
+  win.hide();
+}
+
 ipcMain.handle('get-config', () => frontendConfig());
 ipcMain.handle('get-stats', () => stats());
 ipcMain.handle('get-window-position', () => win ? win.getPosition() : [0, 0]);
+ipcMain.handle('save-postcard', (_event, dataUrl, weekKey) => savePostcard(dataUrl, weekKey));
 ipcMain.on('set-window-position', (_event, x, y) => {
   if (!win || !Number.isFinite(x) || !Number.isFinite(y)) return;
+  lastPetDragAt = Date.now();
+  stopPatrol();
   win.setPosition(Math.round(x), Math.round(y));
 });
 ipcMain.on('hide-pet', () => win && win.hide());
 ipcMain.on('next-gif', () => send('pet:event', { kind: 'next-gif', ts: Date.now() }));
 ipcMain.on('start-focus', (_event, minutes) => startFocusPact(minutes));
+ipcMain.on('focus-codex', returnToPreviousApp);
 ipcMain.on('break-action', (_event, action) => {
   const kind = { water: 'break-water', breathe: 'break-breathe', find: 'break-find-cat' }[action];
   if (kind) send('pet:event', { kind, ts: Date.now() });
@@ -456,6 +529,7 @@ else {
     startBreakWatch();
     startUserActivityWatch();
     startCursorLookWatch();
+    startPatrolWatch();
     if (process.env.LLMPET_DEMO === '1') setTimeout(runDemo, 1200);
     if (process.env.LLMPET_BREAK_DEMO === '1') setTimeout(() => showBreakReminder(1), 1200);
     log('main', 'LLMPET Cat ready');
@@ -467,6 +541,7 @@ app.on('before-quit', () => {
   stopMunch('app quit');
   closeBreakReminder();
   stopFocusPact('app quit', false);
+  stopPatrol();
   clearTimeout(voucherTimer);
   try { if (stopCodexWatcher) stopCodexWatcher(); } catch {}
   try { if (core) core.stopStaleCleanup(); } catch {}

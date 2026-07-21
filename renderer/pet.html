@@ -16,12 +16,15 @@
     </div>
     <div id="focus-pact" class="focus-pact hidden" aria-live="polite"><span>🧶 猫猫专注契约</span><b id="focus-time">25:00</b></div>
     <div id="help-sign" class="help-sign hidden">🙋 这一步需要你决定哦</div>
+    <button id="next-note" class="next-note hidden" type="button">📌 <span>去回复 Codex</span></button>
     <section id="sessions" class="panel hidden">
       <header><span>Codex 会话</span><span><button id="notes-toggle" title="猫猫便签">便签</button><button id="close">×</button></span></header>
       <div id="session-list"></div>
       <div class="focus-actions"><span>🧶 陪我专注</span><button id="focus-25">25 分钟</button><button id="focus-50">50 分钟</button></div>
       <div id="achievement-strip" class="achievement-strip"></div>
       <div id="scrapbook" class="scrapbook" aria-label="今日任务纪念册"></div>
+      <div id="cat-nest" class="cat-nest" aria-label="今日猫猫小窝"></div>
+      <button id="postcard-save" class="postcard-save" type="button">📬 生成本周明信片</button>
       <section id="notes-panel" class="notes-panel hidden">
         <h2>猫猫便签</h2>
         <div class="note-compose"><input id="note-input" maxlength="72" placeholder="写下一件要做的小事…" /><button id="note-add">记下</button></div>
@@ -33,6 +36,7 @@
     <div id="error-box" class="error-box hidden"><span>📦</span><b>再试一次</b></div>
     <div id="status" class="status">待机中</div>
     <div id="cat" class="cat" title="点击查看 Codex 会话">
+      <div id="work-prop" class="work-prop hidden" aria-hidden="true"></div>
       <img id="cat-img" src="../assets/cat/cat-idle.gif" alt="猫猫桌宠" draggable="false" />
     </div>
   </main>
