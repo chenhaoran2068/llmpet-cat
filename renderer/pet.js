@@ -37,7 +37,6 @@ let focusTimer = null;
 let theaterTimer = null;
 let petTapCount = 0;
 let petTapTimer = null;
-let weeklyPostcardBusy = false;
 
 const images = {
   idle: ['candidate-09.gif', 'candidate-02.gif', 'candidate-01.gif'],
@@ -355,7 +354,6 @@ function render(stats) {
   }
   if (!sessions.length) list.textContent = '暂无 Codex 会话，猫猫正在待机。';
   showDailyReport(nextAggregate, sessions);
-  maybeCreateWeeklyPostcard(nextAggregate, sessions);
 }
 
 function applyTimeTheme() {
@@ -388,80 +386,6 @@ function showDailyReport(state, sessions) {
   const data = prepareDaily(dailyStore().data);
   const nest = data.nestItems.slice(-6).map((item) => item.icon).join(' ');
   setTimeout(() => showBubble('今天的猫猫小窝摆好了。', `今天一起完成了 ${data.completed} 个任务 ${nest || '🪺'}，辛苦啦！`, 6500, true), 900);
-}
-
-function dayKeyForOffset(offset) {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + offset);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function currentWeekKey() {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function dailyDataFor(day) {
-  try { return prepareDaily(JSON.parse(localStorage.getItem(`llmpet-cat-day-${day}`)) || {}); }
-  catch { return prepareDaily({}); }
-}
-
-function weeklySummary() {
-  const days = Array.from({ length: 7 }, (_, index) => dailyDataFor(dayKeyForOffset(index - 6)));
-  return {
-    completed: days.reduce((total, data) => total + data.completed, 0),
-    focusPacts: days.reduce((total, data) => total + data.focusPacts, 0),
-    breaks: days.reduce((total, data) => total + data.breaks, 0),
-    items: days.flatMap((data) => data.nestItems).slice(-12),
-  };
-}
-
-function postcardDataUrl(summary) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1200; canvas.height = 720;
-  const ctx = canvas.getContext('2d');
-  const bg = ctx.createLinearGradient(0, 0, 1200, 720);
-  bg.addColorStop(0, '#fff2dd'); bg.addColorStop(1, '#f7c9bd');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(255,255,255,.58)'; ctx.beginPath(); ctx.roundRect(48, 48, 1104, 624, 42); ctx.fill();
-  ctx.fillStyle = '#754b3a'; ctx.font = 'bold 52px "Microsoft YaHei UI"'; ctx.fillText('猫猫本周明信片', 96, 142);
-  ctx.fillStyle = '#a56b50'; ctx.font = '30px "Microsoft YaHei UI"'; ctx.fillText(`这周的我们，也很了不起。  ${currentWeekKey()}`, 98, 193);
-  ctx.font = '84px "Segoe UI Emoji", "Microsoft YaHei UI"'; ctx.fillText('🐱', 960, 164);
-  const stats = [['完成任务', summary.completed], ['专注契约', summary.focusPacts], ['小憩时刻', summary.breaks]];
-  stats.forEach(([label, value], index) => {
-    const x = 105 + index * 330;
-    ctx.fillStyle = '#ffe7cb'; ctx.beginPath(); ctx.roundRect(x, 252, 282, 140, 26); ctx.fill();
-    ctx.fillStyle = '#8b5c45'; ctx.font = '28px "Microsoft YaHei UI"'; ctx.fillText(label, x + 26, 302);
-    ctx.fillStyle = '#c05d43'; ctx.font = 'bold 65px "Microsoft YaHei UI"'; ctx.fillText(String(value), x + 26, 370);
-  });
-  ctx.fillStyle = '#8a5b43'; ctx.font = 'bold 30px "Microsoft YaHei UI"'; ctx.fillText('猫窝收藏', 102, 472);
-  ctx.font = '54px "Segoe UI Emoji", "Microsoft YaHei UI"'; ctx.fillText(summary.items.length ? summary.items.map((item) => item.icon).join(' ') : '🪺 🧶 🐟', 105, 550);
-  ctx.fillStyle = '#a56b50'; ctx.font = '26px "Microsoft YaHei UI"'; ctx.fillText('保存在本机图片文件夹 · 不上传任何数据', 102, 625);
-  return canvas.toDataURL('image/png');
-}
-
-async function createWeeklyPostcard(automatic = false) {
-  if (weeklyPostcardBusy) return;
-  weeklyPostcardBusy = true;
-  try {
-    const filePath = await window.pet.savePostcard(postcardDataUrl(weeklySummary()), currentWeekKey());
-    if (automatic) localStorage.setItem(`llmpet-cat-week-postcard-${currentWeekKey()}`, '1');
-    showBubble('本周明信片已完成。', `猫猫已经存好了：${filePath || '图片\\LLMPET Cat'}`, 7000, true);
-  } catch {
-    showBubble('明信片没有保存成功。', '猫猫会等你下次再试。', 4500);
-  } finally {
-    weeklyPostcardBusy = false;
-  }
-}
-
-function maybeCreateWeeklyPostcard(state, sessions) {
-  const now = new Date();
-  if (now.getDay() !== 0 || now.getHours() < 20 || state !== 'idle' || sessions.some((s) => s.state !== 'idle')) return;
-  const key = `llmpet-cat-week-postcard-${currentWeekKey()}`;
-  if (!localStorage.getItem(key)) createWeeklyPostcard(true);
 }
 
 window.pet.onStats(render);
@@ -614,7 +538,6 @@ $('close').addEventListener('click', () => panel.classList.add('hidden'));
 $('notes-toggle').addEventListener('click', () => { notesPanel.classList.toggle('hidden'); renderNotesAndAchievements(); });
 $('focus-25').addEventListener('click', () => window.pet.startFocus(25));
 $('focus-50').addEventListener('click', () => window.pet.startFocus(50));
-$('postcard-save').addEventListener('click', () => createWeeklyPostcard(false));
 nextNote.addEventListener('click', () => {
   hideHelpSign();
   window.pet.focusCodex();

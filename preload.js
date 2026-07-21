@@ -8,7 +8,6 @@ contextBridge.exposeInMainWorld('pet', {
   getConfig: () => ipcRenderer.invoke('get-config'),
   getStats: () => ipcRenderer.invoke('get-stats'),
   getWindowPosition: () => ipcRenderer.invoke('get-window-position'),
-  savePostcard: (dataUrl, weekKey) => ipcRenderer.invoke('save-postcard', dataUrl, weekKey),
   setWindowPosition: (x, y) => ipcRenderer.send('set-window-position', x, y),
   nextGif: () => ipcRenderer.send('next-gif'),
   startFocus: (minutes) => ipcRenderer.send('start-focus', minutes),

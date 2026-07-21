@@ -39,7 +39,7 @@ button { border: 0; border-radius: 10px; padding: 7px 10px; color: #6a4938; back
 .panel footer { display: flex; justify-content: flex-end; gap: 8px; }
 .achievement-strip { min-height: 18px; margin: -3px 0 5px; color: #a67553; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .scrapbook { min-height: 26px; margin: 1px 0 6px; padding: 4px 6px; border: 1px dashed #d5ad8c; border-radius: 9px; color: #8e6048; background: #fff8ef; font-size: 10px; line-height: 1.6; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.cat-nest { min-height: 31px; margin: 1px 0 5px; padding: 4px 6px; border: 1px solid #d4b08c; border-radius: 12px 12px 7px 7px; color: #79513d; background: linear-gradient(160deg,#fff4df,#f6ddbd); font-size: 10px; line-height: 1.75; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }.postcard-save { width: 100%; padding: 5px; color: #85523c; background: #f7e3cd; font-size: 10px; }
+.cat-nest { min-height: 31px; margin: 1px 0 5px; padding: 4px 6px; border: 1px solid #d4b08c; border-radius: 12px 12px 7px 7px; color: #79513d; background: linear-gradient(160deg,#fff4df,#f6ddbd); font-size: 10px; line-height: 1.75; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .notes-panel { position: absolute; z-index: 10; inset: 38px 10px 42px; padding: 10px; border: 1px solid #d5b79c; border-radius: 12px; background: rgba(255,252,247,.99); box-shadow: 0 5px 18px rgba(74,40,25,.16); }
 .notes-panel h2 { margin: 0 0 8px; font-size: 13px; color: #6c4b39; }
 .note-compose { display: flex; gap: 5px; } .note-compose input { min-width: 0; flex: 1; padding: 7px; border: 1px solid #dec7b2; border-radius: 8px; color: #604534; font: 12px "Microsoft YaHei UI", sans-serif; }

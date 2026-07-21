@@ -1,6 +1,5 @@
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, shell, globalShortcut, powerMonitor } = require('electron');
 const config = require('./backend/config');
@@ -477,19 +476,6 @@ function startPatrolWatch() {
   setInterval(patrolOnce, 45 * 1000);
 }
 
-function savePostcard(dataUrl, weekKey) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(weekKey))) throw new Error('Invalid postcard week');
-  const match = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
-  if (!match) throw new Error('Invalid postcard data');
-  const content = Buffer.from(match[1], 'base64');
-  if (content.length === 0 || content.length > 4 * 1024 * 1024) throw new Error('Invalid postcard size');
-  const directory = path.join(app.getPath('pictures'), 'LLMPET Cat');
-  fs.mkdirSync(directory, { recursive: true });
-  const filePath = path.join(directory, `LLMPET-Cat-Weekly-${weekKey}.png`);
-  fs.writeFileSync(filePath, content);
-  return filePath;
-}
-
 function returnToPreviousApp() {
   if (!win || win.isDestroyed()) return;
   win.blur();
@@ -499,7 +485,6 @@ function returnToPreviousApp() {
 ipcMain.handle('get-config', () => frontendConfig());
 ipcMain.handle('get-stats', () => stats());
 ipcMain.handle('get-window-position', () => win ? win.getPosition() : [0, 0]);
-ipcMain.handle('save-postcard', (_event, dataUrl, weekKey) => savePostcard(dataUrl, weekKey));
 ipcMain.on('set-window-position', (_event, x, y) => {
   if (!win || !Number.isFinite(x) || !Number.isFinite(y)) return;
   lastPetDragAt = Date.now();
