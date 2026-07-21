@@ -11,6 +11,7 @@ const cat = { x: num('catX', innerWidth - 120), y: num('catY', innerHeight - 120
 const duration = num('duration', 18000);
 const canvas = document.getElementById('munch');
 const ctx = canvas.getContext('2d');
+const screenCat = document.getElementById('screen-cat');
 let startedAt = performance.now();
 const hint = document.querySelector('.hint');
 if (mode === 'warning') hint.textContent = '猫猫盯着鼠标流口水……10 秒后开始啃屏幕';
@@ -37,6 +38,7 @@ function draw(now) {
   ctx.clearRect(0, 0, width, height);
 
   if (mode === 'warning') {
+    screenCat.style.display = 'none';
     const pulse = .5 + Math.sin(now / 220) * .5;
     for (let i = 0; i < 6; i += 1) {
       const p = pointOnPath((i + 1) / 7);
@@ -56,34 +58,46 @@ function draw(now) {
     return;
   }
 
-  // The soft sheet makes the last bites become a harmless black screen.
-  ctx.fillStyle = `rgba(0,0,0,${Math.pow(progress, 1.6)})`;
+  // A soft twilight sheet is nibbled away, so the desktop remains visible through the bites.
+  ctx.fillStyle = `rgba(59,47,71,${.12 + Math.pow(progress, 1.45) * .55})`;
   ctx.fillRect(0, 0, width, height);
 
-  // Individual round bites travel from the cat toward the mouse cursor.
-  const count = 24;
+  // Individual round bites travel from the desktop cat toward the mouse cursor.
+  const count = 28;
   for (let i = 0; i < count; i += 1) {
     const threshold = i / count;
     if (progress < threshold) continue;
     const local = Math.min(1, (progress - threshold) * count * 1.7);
     const p = pointOnPath((i + 1) / (count + 1));
-    const radius = 35 + local * (105 + (i % 4) * 18);
-    const gradient = ctx.createRadialGradient(p.x, p.y, radius * .22, p.x, p.y, radius);
-    gradient.addColorStop(0, 'rgba(0,0,0,.98)');
-    gradient.addColorStop(.72, 'rgba(0,0,0,.9)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gradient;
+    const radius = 22 + local * (66 + (i % 4) * 11);
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
     ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+    if (local > .28) {
+      ctx.fillStyle = 'rgba(255,222,158,.82)';
+      ctx.beginPath(); ctx.arc(p.x + radius * .66, p.y - radius * .46, 3 + (i % 3), 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(222,153,104,.7)';
+      ctx.beginPath(); ctx.arc(p.x - radius * .55, p.y + radius * .5, 2 + (i % 2), 0, Math.PI * 2); ctx.fill();
+    }
   }
 
-  // The final bite circles the mouse before the screen turns fully black.
-  const mouth = 24 + progress * 74;
-  ctx.fillStyle = 'rgba(0,0,0,.98)';
+  // The final bite stays a playful hole around the mouse, never a hard black screen.
+  const mouth = 18 + progress * 52;
+  ctx.save(); ctx.globalCompositeOperation = 'destination-out';
   ctx.beginPath();
   ctx.arc(cursor.x, cursor.y, mouth, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
+
+  const catProgress = Math.min(.94, progress * 1.08);
+  const catPoint = pointOnPath(catProgress);
+  screenCat.style.display = 'block';
+  screenCat.style.left = `${catPoint.x - 63}px`;
+  screenCat.style.top = `${catPoint.y - 82}px`;
+  screenCat.style.transform = `rotate(${Math.sin(now / 120) * 5}deg) scale(${1 + Math.sin(now / 140) * .045})`;
 
   if (progress < 1) requestAnimationFrame(draw);
 }

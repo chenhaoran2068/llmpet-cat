@@ -33,6 +33,7 @@ let munchWarningActive = false;
 let munchCursor = null;
 let munchTimer = null;
 let munchWarningTimer = null;
+let munchPetWasVisible = false;
 let lastCodexActivityAt = Date.now();
 let munchFiredForIdle = false;
 let demoTimers = [];
@@ -147,7 +148,11 @@ function stopMunch(reason = 'stopped') {
   if (munchWarningWin && !munchWarningWin.isDestroyed()) munchWarningWin.destroy();
   munchWin = null;
   munchWarningWin = null;
-  if (win && !win.isDestroyed()) win.setAlwaysOnTop(true, 'floating');
+  if (win && !win.isDestroyed()) {
+    win.setAlwaysOnTop(true, 'floating');
+    if (munchPetWasVisible) { win.showInactive(); applyClickThrough(); }
+  }
+  munchPetWasVisible = false;
   rebuildTray();
   log('munch', `screen snack stopped: ${reason}`);
 }
@@ -164,7 +169,10 @@ function startMunch(demo = false) {
   const snack = snackOverlay('eat', duration);
   munchWin = snack.overlay;
   munchCursor = snack.cursor;
-  if (win && !win.isDestroyed()) win.setAlwaysOnTop(true, 'screen-saver');
+  if (win && !win.isDestroyed()) {
+    munchPetWasVisible = win.isVisible();
+    win.hide();
+  }
   munchWin.on('closed', () => { munchWin = null; });
   try { globalShortcut.register('Escape', () => stopMunch('escape')); } catch {}
   munchTimer = setInterval(() => {
