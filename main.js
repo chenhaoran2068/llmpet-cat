@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const { execFile } = require('child_process');
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, screen, shell, globalShortcut, powerMonitor } = require('electron');
 const config = require('./backend/config');
 const { log, LOG_PATH } = require('./backend/log');
@@ -47,10 +48,23 @@ let focusPactTimer = null;
 let lastPetDragAt = Date.now();
 let patrolActive = false;
 let patrolTimers = [];
+let fullscreenHidden = false;
+let fullscreenProbeBusy = false;
 
 function frontendConfig() {
   const c = config.get();
-  return { muted: c.muted, autostart: c.autostart, petPosition: c.petPosition };
+  return { muted: c.muted, autostart: c.autostart, petPosition: c.petPosition, quietMode: c.quietMode, clickThrough: c.clickThrough, gifMood: c.gifMood, fullscreenHide: c.fullscreenHide };
+}
+
+function isQuietTime() {
+  if (!config.get().quietMode) return false;
+  const hour = new Date().getHours();
+  return hour >= 23 || hour < 8;
+}
+
+function applyClickThrough() {
+  if (!win || win.isDestroyed()) return;
+  win.setIgnoreMouseEvents(Boolean(config.get().clickThrough), { forward: true });
 }
 
 function send(channel, payload) {
@@ -195,6 +209,7 @@ function closeBreakReminder() {
 }
 
 function showBreakReminder(blocks) {
+  if (isQuietTime()) return;
   closeBreakReminder();
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const wa = display.workArea;
@@ -341,6 +356,7 @@ function createWindow() {
     },
   });
   win.setAlwaysOnTop(true, 'floating');
+  applyClickThrough();
   win.loadFile(path.join(__dirname, 'renderer', 'pet.html'));
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', (e) => e.preventDefault());
@@ -384,6 +400,14 @@ function rebuildTray() {
     { label: '🎬 演示全部剧情', click: runDemo },
     { label: '🍽 停止啃屏幕', enabled: munchActive || munchWarningActive, click: () => stopMunch('tray menu') },
     { label: c.muted ? '🔔 取消静音' : '🔇 静音', click: () => { config.save({ muted: !c.muted }); send('pet:config', frontendConfig()); rebuildTray(); } },
+    { label: '🌙 安静时段 (23:00–08:00)', type: 'checkbox', checked: c.quietMode, click: () => { config.save({ quietMode: !c.quietMode }); send('pet:config', frontendConfig()); rebuildTray(); } },
+    { label: '🖥️ 全屏自动隐藏', type: 'checkbox', checked: c.fullscreenHide !== false, click: () => { config.save({ fullscreenHide: c.fullscreenHide === false }); rebuildTray(); } },
+    { label: '🫧 鼠标点击穿透', type: 'checkbox', checked: c.clickThrough, click: () => { config.save({ clickThrough: !c.clickThrough }); applyClickThrough(); send('pet:config', frontendConfig()); rebuildTray(); } },
+    { label: '🎞️ 素材偏好', submenu: [
+      { label: '安静', type: 'radio', checked: c.gifMood === 'calm', click: () => setGifMood('calm') },
+      { label: '均衡', type: 'radio', checked: c.gifMood === 'balanced', click: () => setGifMood('balanced') },
+      { label: '活泼', type: 'radio', checked: c.gifMood === 'lively', click: () => setGifMood('lively') },
+    ] },
     { label: '🪟 Windows 开机自启', type: 'checkbox', checked: c.autostart !== false, click: () => setAutostart(c.autostart === false) },
     { type: 'separator' },
     { label: '📄 打开日志', click: () => shell.openPath(LOG_PATH) },
@@ -429,6 +453,58 @@ function startCursorLookWatch() {
     const direction = point.x < bounds.x ? 'left' : point.x > bounds.x + bounds.width ? 'right' : 'center';
     send('pet:look', { direction });
   }, 4 * 1000);
+}
+
+const FULLSCREEN_PROBE = `
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class LLMPETFullscreenProbe {
+  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
+  [StructLayout(LayoutKind.Sequential)] public struct MONITORINFO { public int cbSize; public RECT rcMonitor; public RECT rcWork; public int dwFlags; }
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+  [DllImport("user32.dll")] public static extern IntPtr MonitorFromWindow(IntPtr hWnd, int flags);
+  [DllImport("user32.dll")] public static extern bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+}
+"@
+$petPid = ${process.pid}
+$h = [LLMPETFullscreenProbe]::GetForegroundWindow()
+if ($h -eq [IntPtr]::Zero) { '0'; exit }
+[uint32]$foregroundPid = 0; [void][LLMPETFullscreenProbe]::GetWindowThreadProcessId($h, [ref]$foregroundPid)
+try { $selfName = (Get-Process -Id $petPid -ErrorAction Stop).ProcessName; $frontName = (Get-Process -Id $foregroundPid -ErrorAction Stop).ProcessName } catch { '0'; exit }
+if ($frontName -eq $selfName) { '0'; exit }
+$rect = New-Object LLMPETFullscreenProbe+RECT; if (-not [LLMPETFullscreenProbe]::GetWindowRect($h, [ref]$rect)) { '0'; exit }
+$info = New-Object LLMPETFullscreenProbe+MONITORINFO; $info.cbSize = [Runtime.InteropServices.Marshal]::SizeOf($info)
+if (-not [LLMPETFullscreenProbe]::GetMonitorInfo([LLMPETFullscreenProbe]::MonitorFromWindow($h, 2), [ref]$info)) { '0'; exit }
+$full = [Math]::Abs($rect.Left - $info.rcMonitor.Left) -le 8 -and [Math]::Abs($rect.Top - $info.rcMonitor.Top) -le 8 -and [Math]::Abs($rect.Right - $info.rcMonitor.Right) -le 8 -and [Math]::Abs($rect.Bottom - $info.rcMonitor.Bottom) -le 8
+if ($full) { '1' } else { '0' }
+`;
+
+function startFullscreenWatch() {
+  if (process.platform !== 'win32') return;
+  setInterval(() => {
+    if (fullscreenProbeBusy || !win || win.isDestroyed()) return;
+    if (config.get().fullscreenHide === false) {
+      if (fullscreenHidden) { fullscreenHidden = false; win.showInactive(); applyClickThrough(); }
+      return;
+    }
+    fullscreenProbeBusy = true;
+    execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', FULLSCREEN_PROBE], { windowsHide: true, timeout: 1500 }, (_error, stdout) => {
+      fullscreenProbeBusy = false;
+      const isFullscreen = String(stdout || '').trim().endsWith('1');
+      if (isFullscreen && !fullscreenHidden) { fullscreenHidden = true; win.hide(); }
+      else if (!isFullscreen && fullscreenHidden) { fullscreenHidden = false; win.showInactive(); applyClickThrough(); }
+    });
+  }, 3500);
+}
+
+function setGifMood(gifMood) {
+  if (!['calm', 'balanced', 'lively'].includes(gifMood)) return;
+  config.save({ gifMood });
+  send('pet:config', frontendConfig());
+  rebuildTray();
 }
 
 function taskProp(toolName, toolCalls) {
@@ -494,6 +570,14 @@ ipcMain.on('set-window-position', (_event, x, y) => {
 ipcMain.on('hide-pet', () => win && win.hide());
 ipcMain.on('next-gif', () => send('pet:event', { kind: 'next-gif', ts: Date.now() }));
 ipcMain.on('start-focus', (_event, minutes) => startFocusPact(minutes));
+ipcMain.on('set-preference', (_event, key, value) => {
+  if (key === 'quietMode') config.save({ quietMode: Boolean(value) });
+  else if (key === 'clickThrough') { config.save({ clickThrough: Boolean(value) }); applyClickThrough(); }
+  else if (key === 'gifMood') setGifMood(value);
+  else return;
+  send('pet:config', frontendConfig());
+  rebuildTray();
+});
 ipcMain.on('focus-codex', returnToPreviousApp);
 ipcMain.on('break-action', (_event, action) => {
   const kind = { water: 'break-water', breathe: 'break-breathe', find: 'break-find-cat' }[action];
@@ -514,6 +598,7 @@ else {
     startBreakWatch();
     startUserActivityWatch();
     startCursorLookWatch();
+    startFullscreenWatch();
     startPatrolWatch();
     if (process.env.LLMPET_DEMO === '1') setTimeout(runDemo, 1200);
     if (process.env.LLMPET_BREAK_DEMO === '1') setTimeout(() => showBreakReminder(1), 1200);

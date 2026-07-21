@@ -33,13 +33,14 @@ button { border: 0; border-radius: 10px; padding: 7px 10px; color: #6a4938; back
 #session-list { margin: 8px 0; height: 76px; overflow: auto; }
 .focus-actions { display: flex; align-items: center; gap: 5px; margin: -2px 0 6px; color: #8b604a; font-size: 11px; }
 .focus-actions span { margin-right: auto; font-weight: 700; }.focus-actions button { padding: 4px 7px; font-size: 10px; }
+.pet-preferences { display: flex; gap: 4px; margin: -2px 0 5px; }.pet-preferences button { flex: 1; padding: 4px 3px; font-size: 9px; white-space: nowrap; }.pet-preferences button.active { color: #fffaf0; background: #b87858; }
 .row { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; padding: 9px 4px; border-bottom: 1px solid #efe4d9; font-size: 12px; }
 .row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row .state { color: #9a7460; }
 .panel footer { display: flex; justify-content: flex-end; gap: 8px; }
 .achievement-strip { min-height: 18px; margin: -3px 0 5px; color: #a67553; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .scrapbook { min-height: 26px; margin: 1px 0 6px; padding: 4px 6px; border: 1px dashed #d5ad8c; border-radius: 9px; color: #8e6048; background: #fff8ef; font-size: 10px; line-height: 1.6; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.cat-nest { min-height: 31px; margin: 1px 0 5px; padding: 4px 6px; border: 1px solid #d4b08c; border-radius: 12px 12px 7px 7px; color: #79513d; background: linear-gradient(160deg,#fff4df,#f6ddbd); font-size: 10px; line-height: 1.75; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.cat-nest { min-height: 48px; margin: 1px 0 5px; padding: 4px 6px; border: 1px solid #d4b08c; border-radius: 12px 12px 7px 7px; color: #79513d; background: linear-gradient(160deg,#fff4df,#f6ddbd); font-size: 10px; overflow: hidden; }.nest-title { font-weight: 800; }.nest-scene { position: relative; height: 27px; margin-top: 2px; border-bottom: 4px solid #c69067; border-radius: 0 0 8px 8px; background: linear-gradient(180deg,rgba(255,255,255,.36),transparent); }.nest-item { position: absolute; bottom: -2px; font-size: 18px; filter: drop-shadow(0 1px 0 rgba(99,61,38,.18)); animation: nest-place .45s ease-out both; }.nest-empty { color: #ab8065; font-size: 10px; }
 .notes-panel { position: absolute; z-index: 10; inset: 38px 10px 42px; padding: 10px; border: 1px solid #d5b79c; border-radius: 12px; background: rgba(255,252,247,.99); box-shadow: 0 5px 18px rgba(74,40,25,.16); }
 .notes-panel h2 { margin: 0 0 8px; font-size: 13px; color: #6c4b39; }
 .note-compose { display: flex; gap: 5px; } .note-compose input { min-width: 0; flex: 1; padding: 7px; border: 1px solid #dec7b2; border-radius: 8px; color: #604534; font: 12px "Microsoft YaHei UI", sans-serif; }
@@ -61,11 +62,13 @@ button { border: 0; border-radius: 10px; padding: 7px 10px; color: #6a4938; back
 .work-prop { position: absolute; z-index: 3; top: 4px; right: 22px; padding: 3px 5px; border: 1.5px solid #825b44; border-radius: 9px; color: #6d4838; background: rgba(255,249,239,.94); box-shadow: 1px 2px 0 rgba(91,67,57,.18); font-size: 17px; transform: rotate(8deg); animation: prop-bob 1.2s ease-in-out infinite; pointer-events: none; }
 .cat.petted img { animation: pet-nuzzle .65s ease-in-out both !important; }
 .cat.belly img { animation: pet-belly 1.25s cubic-bezier(.2,.8,.25,1) both !important; }
+.belly-img { display: none; width: 126px; height: 126px; object-fit: contain; filter: drop-shadow(0 5px 6px rgba(66,36,20,.2)); }
 .cat.belly-play { bottom: 1px; height: 146px; }
-.cat.belly-play img { transform-origin: 50% 60%; animation: belly-play-wiggle .72s ease-in-out infinite !important; filter: drop-shadow(0 5px 6px rgba(66,36,20,.2)) saturate(1.08); }
-.cat.belly-play::before { content: '🐾  🤍  🐾'; position: absolute; z-index: 5; left: 50%; bottom: 18px; padding: 2px 7px; border-radius: 999px; background: rgba(255,235,224,.78); font-size: 21px; letter-spacing: 1px; transform: translateX(-50%) rotate(-4deg); animation: belly-paws .72s ease-in-out infinite alternate; pointer-events: none; }
+.cat.belly-play #cat-img { display: none; }
+.cat.belly-play .belly-img { display: block; animation: belly-play-wiggle .72s ease-in-out infinite; }
 .cat.belly-play::after { content: '肚肚玩耍中'; position: absolute; z-index: 5; left: 50%; bottom: 1px; padding: 3px 7px; border: 1.5px solid #9d6b54; border-radius: 9px; color: #79503f; background: rgba(255,248,238,.96); box-shadow: 1px 2px 0 rgba(91,67,57,.16); font-size: 10px; font-weight: 800; transform: translateX(-50%) rotate(2deg); pointer-events: none; }
 .cat.belly-play .work-prop { display: none; }
+.cat[data-transition="thinking-working"] #cat-img { animation: transition-look-up .7s ease-out both !important; }.cat[data-transition$="-happy"] #cat-img { animation: transition-return .9s cubic-bezier(.2,.85,.25,1) both !important; }.cat[data-transition$="-error"] #cat-img { animation: transition-slump .85s ease-in both !important; }
 .cat[data-trick="yarn"]::before { content: '🧡'; position: absolute; z-index: 4; right: 2px; bottom: 13px; font-size: 22px; animation: yarn-chase 1.8s cubic-bezier(.2,.75,.2,1) both; pointer-events: none; }
 .cat[data-theater="crown"]::after { content: '👑'; position: absolute; top: -7px; left: 50%; z-index: 2; font-size: 25px; filter: drop-shadow(0 2px 1px rgba(97,55,20,.28)); transform: translateX(-50%) rotate(-8deg); animation: crown-in 1s ease both; pointer-events: none; }
 .cat[data-theater="nightcap"]::after { content: '🌙'; position: absolute; top: 5px; right: 14px; z-index: 2; font-size: 23px; animation: moon-float 1.7s ease-in-out infinite; pointer-events: none; }
@@ -91,8 +94,11 @@ body.dusk-rain .ambience { opacity: .55; } body.dusk-rain .ambience i { width: 2
 @keyframes prop-bob { 50% { transform: translateY(-4px) rotate(3deg); } }
 @keyframes pet-nuzzle { 30% { transform: scale(1.05,.94) rotate(-5deg); } 65% { transform: scale(.98,1.04) rotate(4deg); } }
 @keyframes pet-belly { 25% { transform: translateY(-8px) rotate(13deg) scale(1.08); } 55% { transform: translateY(1px) rotate(-12deg) scale(1.04); } 100% { transform: rotate(0) scale(1); } }
-@keyframes belly-play-wiggle { 0%,100% { transform: translateY(10px) rotate(88deg) scale(.94,1.05); } 50% { transform: translateY(7px) rotate(96deg) scale(1.01,.98); } }
-@keyframes belly-paws { to { transform: translateX(-50%) translateY(-4px) rotate(5deg) scale(1.08); } }
+@keyframes belly-play-wiggle { 0%,100% { transform: translateY(5px) rotate(-3deg) scale(.96); } 50% { transform: translateY(0) rotate(3deg) scale(1.02); } }
+@keyframes nest-place { from { opacity: 0; transform: translateY(-12px) scale(.45) rotate(-18deg); } to { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
+@keyframes transition-look-up { 0% { transform: translateY(5px) rotate(-3deg); } 45% { transform: translateY(-11px) rotate(5deg) scale(1.06); } 100% { transform: translateY(0) rotate(0); } }
+@keyframes transition-return { 0% { transform: translateX(-24px) scale(.82) rotate(-10deg); } 55% { transform: translateX(7px) scale(1.09) rotate(5deg); } 100% { transform: translateX(0) scale(1) rotate(0); } }
+@keyframes transition-slump { 0% { transform: translateY(-7px) rotate(2deg); } 100% { transform: translateY(8px) rotate(-7deg) scale(.95,1.04); } }
 @keyframes yarn-chase { 0% { transform: translateX(42px) rotate(0); } 38% { transform: translateX(-72px) translateY(-25px) rotate(170deg); } 72% { transform: translateX(-20px) translateY(4px) rotate(300deg); } 100% { transform: translateX(42px) rotate(450deg); } }
 @keyframes crown-in { from { opacity: 0; transform: translate(-50%,-12px) rotate(-25deg) scale(.5); } to { opacity: 1; transform: translateX(-50%) rotate(-8deg) scale(1); } }
 @keyframes moon-float { 50% { transform: translateY(-5px) rotate(8deg); } }

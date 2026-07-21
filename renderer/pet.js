@@ -23,6 +23,9 @@ const focusTime = $('focus-time');
 const helpSign = $('help-sign');
 const nextNote = $('next-note');
 const workProp = $('work-prop');
+const moodToggle = $('mood-toggle');
+const quietToggle = $('quiet-toggle');
+const clickThroughToggle = $('click-through-toggle');
 let currentStats = { sessions: [] };
 let bubbleTimer = null;
 let stampTimer = null;
@@ -37,6 +40,8 @@ let focusTimer = null;
 let theaterTimer = null;
 let petTapTimes = [];
 let bellyPlayTimer = null;
+let transitionTimer = null;
+let petConfig = { quietMode: false, clickThrough: false, gifMood: 'balanced' };
 
 const images = {
   idle: ['candidate-09.gif', 'candidate-02.gif', 'candidate-01.gif'],
@@ -81,10 +86,14 @@ function renderNotesAndAchievements(data = dailyStore().data) {
   scrapbook.textContent = recent.length
     ? `今日纪念册 · ${recent.map((item) => item.icon).join(' ')}  完成 ${data.completed} 件事`
     : '今日纪念册 · 等待第一枚完成小贴纸';
-  const nest = data.nestItems.slice(-9);
-  catNest.textContent = nest.length
-    ? `🪺 今日猫窝 ${nest.map((item) => item.icon).join(' ')} · 猫猫把战利品摆好了`
-    : '🪺 今日猫窝 · 等待第一件战利品';
+  const nest = data.nestItems.slice(-7);
+  catNest.replaceChildren();
+  const nestTitle = document.createElement('div'); nestTitle.className = 'nest-title'; nestTitle.textContent = '🪺 今日猫窝'; catNest.appendChild(nestTitle);
+  if (nest.length) {
+    const scene = document.createElement('div'); scene.className = 'nest-scene';
+    nest.forEach((item, index) => { const piece = document.createElement('span'); piece.className = 'nest-item'; piece.textContent = item.icon; piece.style.left = `${5 + index * 13}%`; piece.style.animationDelay = `${index * 65}ms`; scene.appendChild(piece); });
+    catNest.appendChild(scene);
+  } else { const empty = document.createElement('div'); empty.className = 'nest-empty'; empty.textContent = '等待第一件战利品'; catNest.appendChild(empty); }
   noteList.innerHTML = '';
   if (!data.notes.length) { noteList.textContent = '还没有便签，记下一件小事吧。'; return; }
   data.notes.forEach((note, index) => {
@@ -134,8 +143,15 @@ function updateWorkMotion() {
   catShell.dataset.workBeat = longWorking ? String(Math.floor(elapsed / (2 * 60 * 1000)) % 3) : '0';
 }
 
-function chooseGif(state) {
+function variantsFor(state) {
   const variants = images[state] || images.idle;
+  if (petConfig.gifMood === 'calm') return variants.slice(0, Math.min(2, variants.length));
+  if (petConfig.gifMood === 'lively') return variants;
+  return variants.slice(0, Math.min(3, variants.length));
+}
+
+function chooseGif(state) {
+  const variants = variantsFor(state);
   const choices = variants.filter((gif) => gif !== displayedGif);
   return (choices.length ? choices : variants)[Math.floor(Math.random() * (choices.length || variants.length))];
 }
@@ -149,7 +165,7 @@ function changeGif() {
 
 function scheduleGifRotation() {
   clearTimeout(gifRotationTimer);
-  const variants = images[displayedState] || images.idle;
+  const variants = variantsFor(displayedState);
   if (variants.length < 2) return;
   const delay = displayedState === 'companion'
     ? 8_000 + Math.floor(Math.random() * 6_000)
@@ -165,9 +181,16 @@ function scheduleGifRotation() {
 function showState(state) {
   const s = images[state] ? state : 'idle';
   if (displayedState !== s) {
+    const previous = displayedState;
     displayedState = s;
     changeGif();
     scheduleGifRotation();
+    const transition = previous ? `${previous}-${s}` : '';
+    if (transition) {
+      clearTimeout(transitionTimer);
+      catShell.dataset.transition = transition;
+      transitionTimer = setTimeout(() => delete catShell.dataset.transition, 950);
+    }
   }
   status.textContent = labels[s];
   if (s === 'working' && !workingSince) workingSince = Date.now();
@@ -185,7 +208,9 @@ function updateDifficulty(sessions) {
   }
 }
 
-function showBubble(title, detail = '', ms = 5000, completion = false) {
+function showBubble(title, detail = '', ms = 5000, completion = false, urgent = false) {
+  const hour = new Date().getHours();
+  if (petConfig.quietMode && (hour >= 23 || hour < 8) && !urgent) return;
   clearTimeout(bubbleTimer);
   bubbleTitle.textContent = String(title || '').trim();
   bubbleDetail.textContent = String(detail || '').trim();
@@ -208,6 +233,18 @@ function showErrorBox() {
   clearTimeout(errorTimer);
   errorBox.classList.remove('hidden');
   errorTimer = setTimeout(() => errorBox.classList.add('hidden'), 7000);
+}
+
+function applyPetConfig(next = {}) {
+  petConfig = { ...petConfig, ...next };
+  document.body.classList.toggle('quiet-mode', Boolean(petConfig.quietMode));
+  moodToggle.textContent = `🎞️ ${{ calm: '安静', balanced: '均衡', lively: '活泼' }[petConfig.gifMood] || '均衡'}`;
+  quietToggle.classList.toggle('active', Boolean(petConfig.quietMode));
+  clickThroughToggle.classList.toggle('active', Boolean(petConfig.clickThrough));
+  quietToggle.textContent = petConfig.quietMode ? '🌙 安静中' : '🌙 安静时段';
+  clickThroughToggle.textContent = petConfig.clickThrough ? '🫧 已穿透' : '🫧 点击穿透';
+  changeGif();
+  scheduleGifRotation();
 }
 
 function playTheater(kind, ms = 7000) {
@@ -409,6 +446,7 @@ function showDailyReport(state, sessions) {
   setTimeout(() => showBubble('今天的猫猫小窝摆好了。', `今天一起完成了 ${data.completed} 个任务 ${nest || '🪺'}，辛苦啦！`, 6500, true), 900);
 }
 
+window.pet.onConfig(applyPetConfig);
 window.pet.onStats(render);
 window.pet.onLook((data) => { catShell.dataset.look = ['left', 'right'].includes(data && data.direction) ? data.direction : 'center'; });
 window.pet.onEvent((e) => {
@@ -432,7 +470,7 @@ window.pet.onEvent((e) => {
   else if (e.kind === 'needs-input') {
     showState('thinking');
     showHelpSign();
-    showBubble('这一步需要你决定哦。', '可能是“要继续吗？”或“选 A 还是 B？”，点下便签就回去回复 Codex。', 12000, true);
+    showBubble('这一步需要你决定哦。', '可能是“要继续吗？”或“选 A 还是 B？”，点下便签就回去回复 Codex。', 12000, true, true);
   }
   else if (e.kind === 'break-water') {
     recordBreak();
@@ -559,6 +597,13 @@ $('close').addEventListener('click', () => panel.classList.add('hidden'));
 $('notes-toggle').addEventListener('click', () => { notesPanel.classList.toggle('hidden'); renderNotesAndAchievements(); });
 $('focus-25').addEventListener('click', () => window.pet.startFocus(25));
 $('focus-50').addEventListener('click', () => window.pet.startFocus(50));
+ moodToggle.addEventListener('click', () => {
+  const order = ['calm', 'balanced', 'lively'];
+  const next = order[(order.indexOf(petConfig.gifMood) + 1) % order.length];
+  window.pet.setPreference('gifMood', next);
+ });
+quietToggle.addEventListener('click', () => window.pet.setPreference('quietMode', !petConfig.quietMode));
+clickThroughToggle.addEventListener('click', () => window.pet.setPreference('clickThrough', !petConfig.clickThrough));
 nextNote.addEventListener('click', () => {
   hideHelpSign();
   window.pet.focusCodex();
@@ -574,4 +619,5 @@ setInterval(updateWorkMotion, 15 * 1000);
 setInterval(applyTimeTheme, 60 * 1000);
 applyTimeTheme();
 renderNotesAndAchievements();
+window.pet.getConfig().then(applyPetConfig);
 window.pet.getStats().then((data) => { render(data); greetOncePerDay(); });
