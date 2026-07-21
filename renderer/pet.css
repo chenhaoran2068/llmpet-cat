@@ -61,6 +61,11 @@ button { border: 0; border-radius: 10px; padding: 7px 10px; color: #6a4938; back
 .work-prop { position: absolute; z-index: 3; top: 4px; right: 22px; padding: 3px 5px; border: 1.5px solid #825b44; border-radius: 9px; color: #6d4838; background: rgba(255,249,239,.94); box-shadow: 1px 2px 0 rgba(91,67,57,.18); font-size: 17px; transform: rotate(8deg); animation: prop-bob 1.2s ease-in-out infinite; pointer-events: none; }
 .cat.petted img { animation: pet-nuzzle .65s ease-in-out both !important; }
 .cat.belly img { animation: pet-belly 1.25s cubic-bezier(.2,.8,.25,1) both !important; }
+.cat.belly-play { bottom: 1px; height: 146px; }
+.cat.belly-play img { transform-origin: 50% 60%; animation: belly-play-wiggle .72s ease-in-out infinite !important; filter: drop-shadow(0 5px 6px rgba(66,36,20,.2)) saturate(1.08); }
+.cat.belly-play::before { content: '🐾  🤍  🐾'; position: absolute; z-index: 5; left: 50%; bottom: 18px; padding: 2px 7px; border-radius: 999px; background: rgba(255,235,224,.78); font-size: 21px; letter-spacing: 1px; transform: translateX(-50%) rotate(-4deg); animation: belly-paws .72s ease-in-out infinite alternate; pointer-events: none; }
+.cat.belly-play::after { content: '肚肚玩耍中'; position: absolute; z-index: 5; left: 50%; bottom: 1px; padding: 3px 7px; border: 1.5px solid #9d6b54; border-radius: 9px; color: #79503f; background: rgba(255,248,238,.96); box-shadow: 1px 2px 0 rgba(91,67,57,.16); font-size: 10px; font-weight: 800; transform: translateX(-50%) rotate(2deg); pointer-events: none; }
+.cat.belly-play .work-prop { display: none; }
 .cat[data-trick="yarn"]::before { content: '🧡'; position: absolute; z-index: 4; right: 2px; bottom: 13px; font-size: 22px; animation: yarn-chase 1.8s cubic-bezier(.2,.75,.2,1) both; pointer-events: none; }
 .cat[data-theater="crown"]::after { content: '👑'; position: absolute; top: -7px; left: 50%; z-index: 2; font-size: 25px; filter: drop-shadow(0 2px 1px rgba(97,55,20,.28)); transform: translateX(-50%) rotate(-8deg); animation: crown-in 1s ease both; pointer-events: none; }
 .cat[data-theater="nightcap"]::after { content: '🌙'; position: absolute; top: 5px; right: 14px; z-index: 2; font-size: 23px; animation: moon-float 1.7s ease-in-out infinite; pointer-events: none; }
@@ -86,6 +91,8 @@ body.dusk-rain .ambience { opacity: .55; } body.dusk-rain .ambience i { width: 2
 @keyframes prop-bob { 50% { transform: translateY(-4px) rotate(3deg); } }
 @keyframes pet-nuzzle { 30% { transform: scale(1.05,.94) rotate(-5deg); } 65% { transform: scale(.98,1.04) rotate(4deg); } }
 @keyframes pet-belly { 25% { transform: translateY(-8px) rotate(13deg) scale(1.08); } 55% { transform: translateY(1px) rotate(-12deg) scale(1.04); } 100% { transform: rotate(0) scale(1); } }
+@keyframes belly-play-wiggle { 0%,100% { transform: translateY(10px) rotate(88deg) scale(.94,1.05); } 50% { transform: translateY(7px) rotate(96deg) scale(1.01,.98); } }
+@keyframes belly-paws { to { transform: translateX(-50%) translateY(-4px) rotate(5deg) scale(1.08); } }
 @keyframes yarn-chase { 0% { transform: translateX(42px) rotate(0); } 38% { transform: translateX(-72px) translateY(-25px) rotate(170deg); } 72% { transform: translateX(-20px) translateY(4px) rotate(300deg); } 100% { transform: translateX(42px) rotate(450deg); } }
 @keyframes crown-in { from { opacity: 0; transform: translate(-50%,-12px) rotate(-25deg) scale(.5); } to { opacity: 1; transform: translateX(-50%) rotate(-8deg) scale(1); } }
 @keyframes moon-float { 50% { transform: translateY(-5px) rotate(8deg); } }

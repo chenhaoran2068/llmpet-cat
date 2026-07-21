@@ -35,8 +35,8 @@ let gifRotationTimer = null;
 let focusDeadline = 0;
 let focusTimer = null;
 let theaterTimer = null;
-let petTapCount = 0;
-let petTapTimer = null;
+let petTapTimes = [];
+let bellyPlayTimer = null;
 
 const images = {
   idle: ['candidate-09.gif', 'candidate-02.gif', 'candidate-01.gif'],
@@ -278,18 +278,40 @@ function recordFocusPact() {
   saveDaily(store.data);
 }
 
+function startBellyPlay() {
+  clearTimeout(bellyPlayTimer);
+  petTapTimes = [];
+  delete catShell.dataset.trick;
+  catShell.classList.remove('petted', 'belly');
+  catShell.classList.add('belly-play');
+  clearWorkProp();
+  showBubble('投降啦，肚肚给你玩！', '猫猫趴下来，露出软软的肚肚和肉垫。', 4200, true);
+  bellyPlayTimer = setTimeout(() => catShell.classList.remove('belly-play'), 4200);
+}
+
 function reactToPetTap() {
-  petTapCount += 1;
-  clearTimeout(petTapTimer);
+  if (catShell.classList.contains('belly-play')) {
+    clearTimeout(bellyPlayTimer);
+    bellyPlayTimer = setTimeout(() => catShell.classList.remove('belly-play'), 4200);
+    showBubble('肚肚被摸到了！', '猫猫开心地扭来扭去。', 2200);
+    return;
+  }
+  const now = Date.now();
+  petTapTimes.push(now);
+  petTapTimes = petTapTimes.filter((time) => now - time <= 1250);
+  const tapCount = petTapTimes.length;
   const hour = new Date().getHours();
-  if (petTapCount >= 5) {
-    petTapCount = 0;
+  if (tapCount >= 8) {
+    startBellyPlay();
+    return;
+  }
+  if (tapCount === 5) {
     catShell.dataset.trick = 'yarn';
     showBubble('毛线球出现！', '猫猫开启追球秘密动作。', 2600);
     setTimeout(() => delete catShell.dataset.trick, 1900);
     return;
   }
-  if (petTapCount === 3) {
+  if (tapCount === 3) {
     catShell.classList.remove('petted');
     catShell.classList.add('belly');
     showBubble('这里最软软的地方只给你摸哦。', '再摸两下，也许会发现秘密。', 2600);
@@ -301,7 +323,6 @@ function reactToPetTap() {
   const detail = hour < 11 ? '早上好，先伸个懒腰吧。' : hour >= 21 || hour < 6 ? '夜里也要轻轻地摸哦，猫猫快困了。' : '摸摸收到了，猫猫继续陪你。';
   showBubble('喵呜～', detail, 1800);
   setTimeout(() => catShell.classList.remove('petted'), 700);
-  petTapTimer = setTimeout(() => { petTapCount = 0; }, 1100);
 }
 
 function dominantState(sessions, userWorking) {
