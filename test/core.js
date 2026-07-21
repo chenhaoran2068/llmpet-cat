@@ -1,0 +1,13 @@
+'use strict';
+const assert = require('assert');
+const { createCore } = require('../backend/core');
+const events = [];
+const core = createCore({ onActivity: (e) => events.push(e) });
+core.updateSession('s1', 'thinking', 'UserPromptSubmit', { cwd: 'C:\\demo', model: 'gpt-test' });
+core.updateSession('s1', 'working', 'PreToolUse', { toolName: 'exec' });
+core.updateSession('s1', 'idle', 'Stop', { assistantLastOutput: '完成' });
+const s = core.buildSnapshot().sessions[0];
+assert.strictEqual(s.badge, 'done');
+assert.strictEqual(s.model, 'gpt-test');
+assert(events.at(-1).realCompletion);
+console.log('codex core: ok');

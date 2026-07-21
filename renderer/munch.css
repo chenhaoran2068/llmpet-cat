@@ -1,0 +1,11 @@
+* { box-sizing: border-box; }
+html, body, canvas { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+canvas { display: block; }
+.hint {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  margin: 0; padding: 7px 12px; border-radius: 999px;
+  color: rgba(255,255,255,.78); background: rgba(0,0,0,.28);
+  font: 13px/1.2 "Microsoft YaHei", sans-serif; letter-spacing: .04em;
+  opacity: 0; animation: hint-in 1s ease 1.2s forwards;
+}
+@keyframes hint-in { to { opacity: 1; } }

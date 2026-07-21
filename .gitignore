@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build artifacts (rebuild locally or obtain them from GitHub Releases)
+dist/
+dist-*/
+release/
+*.dmg
+*.zip
+*.exe
+*.app/
+
+# Local runtime state (never lives in the repo, but guard anyway)
+.octopus/
+usage.json
+.codex/
+sessions/
+*.jsonl
+
+# Editor / local project config
+.claude/
+.vscode/
+.idea/
+
+# Image iteration backups (not part of the shipped art)
+assets/_orig_mascot/
+
+# OS / logs
+.DS_Store
+*.log
+npm-debug.log*

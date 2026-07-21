@@ -1,0 +1,79 @@
+{
+  "name": "llmpet-cat",
+  "version": "0.4.0",
+  "description": "陪你使用 Codex 的猫猫桌宠",
+  "main": "main.js",
+  "license": "MIT",
+  "author": "Chenaoran",
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "start": "electron .",
+    "package:win": "electron-builder --win --publish never",
+    "package:mac": "electron-builder --mac --universal --publish never",
+    "test": "node test/core.js && node test/codex-watcher.js"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.myunwang.octopus",
+    "productName": "LLMPET Cat",
+    "copyright": "Copyright © 2026 Chenaoran",
+    "asar": false,
+    "files": [
+      "main.js",
+      "preload.js",
+      "LICENSE",
+      "PRIVACY.md",
+      "README.md",
+      "backend/config.js",
+      "backend/core.js",
+      "backend/codex-watcher.js",
+      "backend/log.js",
+      "renderer/pet.html",
+      "renderer/pet.css",
+      "renderer/pet.js",
+      "renderer/munch.html",
+      "renderer/munch.css",
+      "renderer/munch.js",
+      "renderer/break.html",
+      "renderer/break.css",
+      "renderer/break.js",
+      "assets/cat/CREDITS.md",
+      "assets/cat/cat-sleeping.gif",
+      "assets/cat/cat-talking.gif",
+      "assets/cat/candidate-01.gif",
+      "assets/cat/candidate-02.gif",
+      "assets/cat/candidate-03.gif",
+      "assets/cat/candidate-04.gif",
+      "assets/cat/candidate-05.gif",
+      "assets/cat/candidate-09.gif",
+      "assets/icon.ico",
+      "assets/icon.icns",
+      "assets/tray.png",
+      "assets/tray@2x.png"
+    ],
+    "win": {
+      "target": ["nsis", "zip"],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "artifactName": "LLMPET-Cat-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "artifactName": "LLMPET-Cat-Setup-${version}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/installer.nsh"
+    }
+  }
+}
