@@ -2,6 +2,7 @@
 
 const $ = (id) => document.getElementById(id);
 const cat = $('cat-img');
+const bellyCat = $('belly-img');
 const catShell = $('cat');
 const status = $('status');
 const bubble = $('bubble');
@@ -40,6 +41,7 @@ let focusTimer = null;
 let theaterTimer = null;
 let petTapTimes = [];
 let bellyPlayTimer = null;
+let lastBellyMode = '';
 let transitionTimer = null;
 let petConfig = { quietMode: false, clickThrough: false, gifMood: 'balanced' };
 
@@ -55,6 +57,11 @@ const images = {
   greet: ['candidate-01.gif', 'candidate-05.gif'],
   loafing: ['candidate-02.gif', 'candidate-09.gif', 'candidate-05.gif'],
 };
+const bellyModes = [
+  { id: 'happy', image: 'cat-belly-play.png', title: '投降啦，肚肚给你玩！', detail: '猫猫趴下来，露出软软的肚肚和肉垫。' },
+  { id: 'wave', image: 'cat-belly-wave.png', title: '肉垫挥挥！', detail: '猫猫躺好后举起爪爪和你玩。' },
+  { id: 'roll', image: 'cat-belly-roll.png', title: '翻滚一下！', detail: '猫猫侧身打了个小滚，尾巴也翘起来了。' },
+];
 const labels = { idle: '待机中', working: '正在工作', companion: '陪你工作中', thinking: '思考中', sleeping: '睡觉中', error: '遇到错误', happy: '完成啦', talking: '回复中', greet: '你好呀', loafing: '休息一下' };
 
 function localDay() {
@@ -318,18 +325,23 @@ function recordFocusPact() {
 function startBellyPlay() {
   clearTimeout(bellyPlayTimer);
   petTapTimes = [];
+  const choices = bellyModes.filter((mode) => mode.id !== lastBellyMode);
+  const mode = (choices.length ? choices : bellyModes)[Math.floor(Math.random() * (choices.length || bellyModes.length))];
+  lastBellyMode = mode.id;
+  bellyCat.src = `../assets/cat/${mode.image}`;
   delete catShell.dataset.trick;
+  catShell.dataset.bellyMode = mode.id;
   catShell.classList.remove('petted', 'belly');
   catShell.classList.add('belly-play');
   clearWorkProp();
-  showBubble('投降啦，肚肚给你玩！', '猫猫趴下来，露出软软的肚肚和肉垫。', 4200, true);
-  bellyPlayTimer = setTimeout(() => catShell.classList.remove('belly-play'), 4200);
+  showBubble(mode.title, mode.detail, 4200, true);
+  bellyPlayTimer = setTimeout(() => { catShell.classList.remove('belly-play'); delete catShell.dataset.bellyMode; }, 4200);
 }
 
 function reactToPetTap() {
   if (catShell.classList.contains('belly-play')) {
     clearTimeout(bellyPlayTimer);
-    bellyPlayTimer = setTimeout(() => catShell.classList.remove('belly-play'), 4200);
+    bellyPlayTimer = setTimeout(() => { catShell.classList.remove('belly-play'); delete catShell.dataset.bellyMode; }, 4200);
     showBubble('肚肚被摸到了！', '猫猫开心地扭来扭去。', 2200);
     return;
   }

@@ -1,6 +1,6 @@
 {
   "name": "llmpet-cat",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "陪你使用 Codex 的猫猫桌宠",
   "main": "main.js",
   "license": "MIT",
@@ -43,6 +43,8 @@
       "assets/cat/CREDITS.md",
       "assets/cat/cat-sleeping.gif",
       "assets/cat/cat-belly-play.png",
+      "assets/cat/cat-belly-wave.png",
+      "assets/cat/cat-belly-roll.png",
       "assets/cat/cat-talking.gif",
       "assets/cat/candidate-01.gif",
       "assets/cat/candidate-02.gif",

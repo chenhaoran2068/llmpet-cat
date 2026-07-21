@@ -66,6 +66,8 @@ button { border: 0; border-radius: 10px; padding: 7px 10px; color: #6a4938; back
 .cat.belly-play { bottom: 1px; height: 146px; }
 .cat.belly-play #cat-img { display: none; }
 .cat.belly-play .belly-img { display: block; animation: belly-play-wiggle .72s ease-in-out infinite; }
+.cat.belly-play[data-belly-mode="wave"] .belly-img { animation: belly-play-wave .58s ease-in-out infinite alternate; }
+.cat.belly-play[data-belly-mode="roll"] .belly-img { animation: belly-play-roll 1.05s cubic-bezier(.3,.75,.35,1) infinite; }
 .cat.belly-play::after { content: '肚肚玩耍中'; position: absolute; z-index: 5; left: 50%; bottom: 1px; padding: 3px 7px; border: 1.5px solid #9d6b54; border-radius: 9px; color: #79503f; background: rgba(255,248,238,.96); box-shadow: 1px 2px 0 rgba(91,67,57,.16); font-size: 10px; font-weight: 800; transform: translateX(-50%) rotate(2deg); pointer-events: none; }
 .cat.belly-play .work-prop { display: none; }
 .cat[data-transition="thinking-working"] #cat-img { animation: transition-look-up .7s ease-out both !important; }.cat[data-transition$="-happy"] #cat-img { animation: transition-return .9s cubic-bezier(.2,.85,.25,1) both !important; }.cat[data-transition$="-error"] #cat-img { animation: transition-slump .85s ease-in both !important; }
@@ -95,6 +97,8 @@ body.dusk-rain .ambience { opacity: .55; } body.dusk-rain .ambience i { width: 2
 @keyframes pet-nuzzle { 30% { transform: scale(1.05,.94) rotate(-5deg); } 65% { transform: scale(.98,1.04) rotate(4deg); } }
 @keyframes pet-belly { 25% { transform: translateY(-8px) rotate(13deg) scale(1.08); } 55% { transform: translateY(1px) rotate(-12deg) scale(1.04); } 100% { transform: rotate(0) scale(1); } }
 @keyframes belly-play-wiggle { 0%,100% { transform: translateY(5px) rotate(-3deg) scale(.96); } 50% { transform: translateY(0) rotate(3deg) scale(1.02); } }
+@keyframes belly-play-wave { from { transform: translateY(3px) rotate(-5deg) scale(.97); } to { transform: translateY(-5px) rotate(5deg) scale(1.03); } }
+@keyframes belly-play-roll { 0%,100% { transform: translateX(-5px) rotate(-7deg) scale(.95); } 45% { transform: translateX(8px) rotate(7deg) scale(1.04); } 65% { transform: translateX(2px) rotate(2deg) scale(1.02); } }
 @keyframes nest-place { from { opacity: 0; transform: translateY(-12px) scale(.45) rotate(-18deg); } to { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
 @keyframes transition-look-up { 0% { transform: translateY(5px) rotate(-3deg); } 45% { transform: translateY(-11px) rotate(5deg) scale(1.06); } 100% { transform: translateY(0) rotate(0); } }
 @keyframes transition-return { 0% { transform: translateX(-24px) scale(.82) rotate(-10deg); } 55% { transform: translateX(7px) scale(1.09) rotate(5deg); } 100% { transform: translateX(0) scale(1) rotate(0); } }
