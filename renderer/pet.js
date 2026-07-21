@@ -23,18 +23,20 @@ let errorTimer = null;
 let displayedState = '';
 let aggregateState = 'idle';
 let workingSince = 0;
+let displayedGif = '';
+let gifRotationTimer = null;
 
 const images = {
-  idle: 'candidate-09.gif',
-  working: 'candidate-03.gif',
-  companion: 'candidate-03.gif',
-  thinking: 'candidate-03.gif',
-  sleeping: 'cat-sleeping.gif',
-  error: 'candidate-04.gif',
-  happy: 'candidate-05.gif',
-  talking: 'cat-talking.gif',
-  greet: 'candidate-01.gif',
-  loafing: 'candidate-02.gif',
+  idle: ['candidate-09.gif', 'candidate-02.gif', 'candidate-01.gif'],
+  working: ['candidate-03.gif', 'candidate-01.gif', 'candidate-09.gif'],
+  companion: ['candidate-03.gif', 'candidate-02.gif', 'candidate-09.gif'],
+  thinking: ['candidate-03.gif', 'candidate-02.gif', 'candidate-09.gif'],
+  sleeping: ['cat-sleeping.gif'],
+  error: ['candidate-04.gif'],
+  happy: ['candidate-05.gif', 'candidate-01.gif', 'cat-talking.gif'],
+  talking: ['cat-talking.gif', 'candidate-01.gif', 'candidate-05.gif'],
+  greet: ['candidate-01.gif', 'candidate-05.gif'],
+  loafing: ['candidate-02.gif', 'candidate-09.gif', 'candidate-05.gif'],
 };
 const labels = { idle: '待机中', working: '正在工作', companion: '陪你工作中', thinking: '思考中', sleeping: '睡觉中', error: '遇到错误', happy: '完成啦', talking: '回复中', greet: '你好呀', loafing: '休息一下' };
 
@@ -106,10 +108,37 @@ function updateWorkMotion() {
   catShell.dataset.workBeat = longWorking ? String(Math.floor(elapsed / (2 * 60 * 1000)) % 3) : '0';
 }
 
+function chooseGif(state) {
+  const variants = images[state] || images.idle;
+  const choices = variants.filter((gif) => gif !== displayedGif);
+  return (choices.length ? choices : variants)[Math.floor(Math.random() * (choices.length || variants.length))];
+}
+
+function changeGif() {
+  const next = chooseGif(displayedState || 'idle');
+  if (next === displayedGif) return;
+  displayedGif = next;
+  cat.src = `../assets/cat/${next}`;
+}
+
+function scheduleGifRotation() {
+  clearTimeout(gifRotationTimer);
+  const variants = images[displayedState] || images.idle;
+  if (variants.length < 2) return;
+  const delay = 35_000 + Math.floor(Math.random() * 20_000);
+  gifRotationTimer = setTimeout(() => {
+    changeGif();
+    scheduleGifRotation();
+  }, delay);
+}
+
 function showState(state) {
   const s = images[state] ? state : 'idle';
-  if (displayedState !== s) cat.src = `../assets/cat/${images[s]}`;
-  displayedState = s;
+  if (displayedState !== s) {
+    displayedState = s;
+    changeGif();
+    scheduleGifRotation();
+  }
   status.textContent = labels[s];
   if (s === 'working' && !workingSince) workingSince = Date.now();
   if (s !== 'working') workingSince = 0;
@@ -237,7 +266,12 @@ function showDailyReport(state, sessions) {
 window.pet.onStats(render);
 window.pet.onLook((data) => { catShell.dataset.look = ['left', 'right'].includes(data && data.direction) ? data.direction : 'center'; });
 window.pet.onEvent((e) => {
-  if (e.kind === 'turn-done') {
+  if (e.kind === 'next-gif') {
+    changeGif();
+    scheduleGifRotation();
+    showBubble('猫猫换了个动作。', '每次都想给你一点新鲜感！', 3200);
+  }
+  else if (e.kind === 'turn-done') {
     showState('happy');
     showStamp();
     const streak = recordCompletion();

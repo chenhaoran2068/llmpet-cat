@@ -335,6 +335,7 @@ function rebuildTray() {
   if (!tray) return;
   const c = config.get();
   tray.setContextMenu(Menu.buildFromTemplate([
+    { label: '🎲 换一个动作', click: () => send('pet:event', { kind: 'next-gif', ts: Date.now() }) },
     { label: '🐱 显示猫猫', click: () => win && win.show() },
     { label: '🎬 演示全部剧情', click: runDemo },
     { label: '🍽 停止啃屏幕', enabled: munchActive || munchWarningActive, click: () => stopMunch('tray menu') },
@@ -394,6 +395,7 @@ ipcMain.on('set-window-position', (_event, x, y) => {
   win.setPosition(Math.round(x), Math.round(y));
 });
 ipcMain.on('hide-pet', () => win && win.hide());
+ipcMain.on('next-gif', () => send('pet:event', { kind: 'next-gif', ts: Date.now() }));
 ipcMain.on('quit-app', () => app.quit());
 
 const gotLock = app.requestSingleInstanceLock();

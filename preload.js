@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('pet', {
   getStats: () => ipcRenderer.invoke('get-stats'),
   getWindowPosition: () => ipcRenderer.invoke('get-window-position'),
   setWindowPosition: (x, y) => ipcRenderer.send('set-window-position', x, y),
+  nextGif: () => ipcRenderer.send('next-gif'),
   hide: () => ipcRenderer.send('hide-pet'),
   quit: () => ipcRenderer.send('quit-app'),
 });
