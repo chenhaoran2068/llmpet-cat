@@ -143,7 +143,11 @@ function scheduleGifRotation() {
   clearTimeout(gifRotationTimer);
   const variants = images[displayedState] || images.idle;
   if (variants.length < 2) return;
-  const delay = 35_000 + Math.floor(Math.random() * 20_000);
+  const delay = displayedState === 'companion'
+    ? 8_000 + Math.floor(Math.random() * 6_000)
+    : ['working', 'thinking'].includes(displayedState)
+      ? 18_000 + Math.floor(Math.random() * 12_000)
+      : 35_000 + Math.floor(Math.random() * 20_000);
   gifRotationTimer = setTimeout(() => {
     changeGif();
     scheduleGifRotation();
