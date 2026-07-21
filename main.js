@@ -42,6 +42,8 @@ let completedWorkBlocks = 0;
 let completedVoucherBlocks = 0;
 let voucherTimer = null;
 const taskToolCounts = new Map();
+let focusPact = null;
+let focusPactTimer = null;
 
 function frontendConfig() {
   const c = config.get();
@@ -197,19 +199,18 @@ function showBreakReminder(blocks) {
   const height = 270;
   breakWin = new BrowserWindow({
     x: Math.round(wa.x + (wa.width - width) / 2), y: Math.round(wa.y + (wa.height - height) / 2),
-    width, height, frame: false, transparent: true, resizable: false, focusable: false,
+    width, height, frame: false, transparent: true, resizable: false, focusable: true,
     alwaysOnTop: true, skipTaskbar: true, hasShadow: false,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
-  breakWin.setAlwaysOnTop(true, 'screen-saver');
-  breakWin.setIgnoreMouseEvents(true, { forward: true });
+  breakWin.setAlwaysOnTop(true, 'floating');
   breakWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   breakWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   breakWin.webContents.on('will-navigate', (e) => e.preventDefault());
   breakWin.once('ready-to-show', () => { if (breakWin) breakWin.showInactive(); });
   breakWin.on('closed', () => { breakWin = null; });
   breakWin.loadFile(path.join(__dirname, 'renderer', 'break.html'), { query: { blocks: String(blocks) } });
-  breakTimer = setTimeout(closeBreakReminder, 15 * 1000);
+  breakTimer = setTimeout(closeBreakReminder, 55 * 1000);
   send('pet:event', { kind: 'break-reminder', blocks, ts: Date.now() });
   log('break', `rest reminder shown after ${blocks * 40} minutes`);
 }
@@ -245,6 +246,33 @@ function clearDemo() {
   demoTimers = [];
 }
 
+function stopFocusPact(reason = 'cancelled', announce = true) {
+  if (!focusPact) return;
+  const pact = focusPact;
+  focusPact = null;
+  clearTimeout(focusPactTimer); focusPactTimer = null;
+  if (announce) send('pet:event', { kind: 'focus-cancel', minutes: pact.minutes, reason, ts: Date.now() });
+  rebuildTray();
+}
+
+function startFocusPact(minutes) {
+  const safeMinutes = Number(minutes);
+  if (![25, 50].includes(safeMinutes)) return;
+  stopFocusPact('restarted', false);
+  const endsAt = Date.now() + safeMinutes * 60 * 1000;
+  focusPact = { minutes: safeMinutes, endsAt };
+  focusPactTimer = setTimeout(() => {
+    const pact = focusPact;
+    focusPact = null;
+    focusPactTimer = null;
+    if (pact) send('pet:event', { kind: 'focus-finish', minutes: pact.minutes, ts: Date.now() });
+    rebuildTray();
+  }, safeMinutes * 60 * 1000);
+  send('pet:event', { kind: 'focus-start', minutes: safeMinutes, endsAt, ts: Date.now() });
+  rebuildTray();
+  log('focus', `focus pact started: ${safeMinutes}m`);
+}
+
 function runDemo() {
   clearDemo();
   stopMunch('demo restart');
@@ -271,8 +299,14 @@ function activityEvents(act) {
     const task = String(s.sessionTitle || project).replace(/\s+/g, ' ').trim().slice(0, 52);
     return [{ kind: 'user-turn', project, task }];
   }
+  if (act.event === 'NeedInput') {
+    return [{ kind: 'needs-input', project, task: String(s.sessionTitle || project).slice(0, 52) }];
+  }
   if (act.event === 'PreToolUse') {
     taskToolCounts.set(s.id, (taskToolCounts.get(s.id) || 0) + 1);
+    if (/request[_-]?user[_-]?input|ask[_-]?user|user[_-]?input/i.test(s.lastEventTool || '')) {
+      return [{ kind: 'needs-input', project, task: String(s.sessionTitle || project).slice(0, 52) }];
+    }
     return [{ kind: 'operation', project, tool: s.lastEventTool || 'tool' }];
   }
   if (act.event === 'Error') return [{ kind: 'task-error', project, task: String(s.sessionTitle || project).slice(0, 52) }];
@@ -335,6 +369,12 @@ function rebuildTray() {
   if (!tray) return;
   const c = config.get();
   tray.setContextMenu(Menu.buildFromTemplate([
+    { label: '🧶 陪我专注', submenu: [
+      { label: '签下 25 分钟契约', click: () => startFocusPact(25) },
+      { label: '签下 50 分钟契约', click: () => startFocusPact(50) },
+      { type: 'separator' },
+      { label: '结束本次契约', enabled: Boolean(focusPact), click: () => stopFocusPact('tray') },
+    ] },
     { label: '🎲 换一个动作', click: () => send('pet:event', { kind: 'next-gif', ts: Date.now() }) },
     { label: '🐱 显示猫猫', click: () => win && win.show() },
     { label: '🎬 演示全部剧情', click: runDemo },
@@ -396,6 +436,11 @@ ipcMain.on('set-window-position', (_event, x, y) => {
 });
 ipcMain.on('hide-pet', () => win && win.hide());
 ipcMain.on('next-gif', () => send('pet:event', { kind: 'next-gif', ts: Date.now() }));
+ipcMain.on('start-focus', (_event, minutes) => startFocusPact(minutes));
+ipcMain.on('break-action', (_event, action) => {
+  const kind = { water: 'break-water', breathe: 'break-breathe', find: 'break-find-cat' }[action];
+  if (kind) send('pet:event', { kind, ts: Date.now() });
+});
 ipcMain.on('quit-app', () => app.quit());
 
 const gotLock = app.requestSingleInstanceLock();
@@ -421,6 +466,7 @@ app.on('window-all-closed', () => {});
 app.on('before-quit', () => {
   stopMunch('app quit');
   closeBreakReminder();
+  stopFocusPact('app quit', false);
   clearTimeout(voucherTimer);
   try { if (stopCodexWatcher) stopCodexWatcher(); } catch {}
   try { if (core) core.stopStaleCleanup(); } catch {}

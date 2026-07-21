@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('pet', {
   getWindowPosition: () => ipcRenderer.invoke('get-window-position'),
   setWindowPosition: (x, y) => ipcRenderer.send('set-window-position', x, y),
   nextGif: () => ipcRenderer.send('next-gif'),
+  startFocus: (minutes) => ipcRenderer.send('start-focus', minutes),
+  breakAction: (action) => ipcRenderer.send('break-action', action),
   hide: () => ipcRenderer.send('hide-pet'),
   quit: () => ipcRenderer.send('quit-app'),
 });

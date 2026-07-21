@@ -13,6 +13,7 @@ const rows = [
   { type: 'turn_context', payload: { cwd: 'C:\\work', model: 'gpt-test' } },
   { type: 'event_msg', payload: { type: 'user_message', message: '修复登录问题' } },
   { type: 'response_item', payload: { type: 'custom_tool_call', name: 'exec' } },
+  { type: 'response_item', payload: { type: 'custom_tool_call', name: 'request_user_input' } },
   { type: 'event_msg', payload: { type: 'task_complete', last_agent_message: '已经修复' } },
 ];
 fs.writeFileSync(file, rows.map((x) => JSON.stringify(x)).join('\n') + '\n');
@@ -27,6 +28,7 @@ stop();
 
 assert(calls.some(([sid, state, event, f]) => sid === 'codex-test' && state === 'thinking' && event === 'UserPromptSubmit' && f.agentId === 'codex'));
 assert(calls.some(([, state, event, f]) => state === 'working' && event === 'PreToolUse' && f.toolName === 'exec'));
+assert(calls.some(([, state, event, f]) => state === 'thinking' && event === 'NeedInput' && f.toolName === 'request_user_input'));
 assert(calls.some(([, state, event, f]) => state === 'idle' && event === 'Stop' && f.assistantLastOutput === '已经修复'));
 assert(calls.some(([, , , f]) => f.model === 'gpt-test' && f.sessionTitle === '修复登录问题'));
 

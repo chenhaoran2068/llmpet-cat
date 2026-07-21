@@ -88,7 +88,9 @@ function createCodexWatcher(core, options = {}) {
 
     if (row.type === 'response_item') {
       if (p.type === 'custom_tool_call') {
-        core.updateSession(sid, 'working', 'PreToolUse', fields(file, { toolName: p.name || 'tool' }));
+        const toolName = p.name || 'tool';
+        const asksUser = /request[_-]?user[_-]?input|ask[_-]?user|user[_-]?input/i.test(toolName);
+        core.updateSession(sid, asksUser ? 'thinking' : 'working', asksUser ? 'NeedInput' : 'PreToolUse', fields(file, { toolName }));
       } else if (p.type === 'custom_tool_call_output') {
         core.updateSession(sid, 'working', 'PostToolUse', fields(file));
       } else if (p.type === 'reasoning') {

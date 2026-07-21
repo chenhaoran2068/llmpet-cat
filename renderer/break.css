@@ -1,12 +1,8 @@
 * { box-sizing: border-box; }
-html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; font-family: "Microsoft YaHei UI", sans-serif; }
-.card { width: calc(100% - 16px); height: calc(100% - 16px); margin: 8px; display: flex; align-items: center; gap: 18px; padding: 22px 28px; border: 3px solid #74513d; border-radius: 34px 22px 34px 18px; color: #51372b; background: rgba(255,251,243,.98); box-shadow: 8px 10px 0 rgba(77,46,30,.25); animation: card-in .55s cubic-bezier(.2,.8,.25,1) both; }
-.card img { width: 142px; height: 142px; object-fit: contain; filter: drop-shadow(0 5px 4px rgba(78,43,25,.18)); animation: cat-wave 1.8s ease-in-out infinite; }
-section { flex: 1; }
-p { margin: 0; }
-.eyebrow { margin-bottom: 6px; color: #b16945; font-size: 13px; font-weight: 800; letter-spacing: .08em; }
-h1 { margin: 0; color: #51372b; font-size: 23px; line-height: 1.35; }
-.copy { margin-top: 10px; color: #765241; font-size: 15px; line-height: 1.6; }
-.note { margin-top: 11px; color: #a37b65; font-size: 11px; }
-@keyframes card-in { from { opacity: 0; transform: scale(.78) translateY(22px) rotate(-2deg); } to { opacity: 1; transform: scale(1) translateY(0) rotate(0); } }
-@keyframes cat-wave { 50% { transform: translateY(-7px) rotate(3deg); } }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; font-family: "Microsoft YaHei UI", sans-serif; user-select: none; }
+.card { width: calc(100% - 16px); height: calc(100% - 16px); margin: 8px; display: flex; align-items: center; gap: 18px; padding: 18px 25px; border: 3px solid #74513d; border-radius: 34px 22px 34px 18px; color: #51372b; background: rgba(255,251,243,.98); box-shadow: 8px 10px 0 rgba(77,46,30,.25); animation: card-in .55s cubic-bezier(.2,.8,.25,1) both; }
+.card > img { width: 128px; height: 128px; object-fit: contain; filter: drop-shadow(0 5px 4px rgba(78,43,25,.18)); animation: cat-wave 1.8s ease-in-out infinite; }
+section { min-width: 0; flex: 1; } p { margin: 0; }.eyebrow { margin-bottom: 4px; color: #b16945; font-size: 12px; font-weight: 800; letter-spacing: .08em; } h1 { margin: 0; color: #51372b; font-size: 21px; line-height: 1.35; }.copy { margin-top: 5px; color: #765241; font-size: 13px; line-height: 1.5; }
+.choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }.choices button { border: 1px solid #c49372; border-radius: 999px; padding: 5px 8px; color: #6c4938; background: #fff4e7; font: 700 11px "Microsoft YaHei UI", sans-serif; cursor: pointer; }.choices button:hover { background: #ffe5ca; transform: translateY(-1px); }.choices button:disabled { opacity: .52; cursor: default; }
+.note { margin-top: 8px; color: #a37b65; font-size: 11px; }.find-game { position: relative; height: 45px; margin-top: 7px; overflow: hidden; border: 1px dashed #d0a989; border-radius: 10px; background: #fff8ee; }.find-game button { position: absolute; border: 0; background: transparent; font-size: 24px; cursor: pointer; animation: peek .8s ease-in-out infinite alternate; }.hidden { display: none; }
+@keyframes card-in { from { opacity: 0; transform: scale(.78) translateY(22px) rotate(-2deg); } to { opacity: 1; transform: scale(1) translateY(0) rotate(0); } } @keyframes cat-wave { 50% { transform: translateY(-7px) rotate(3deg); } } @keyframes peek { to { transform: translateY(-3px) rotate(7deg); } }
