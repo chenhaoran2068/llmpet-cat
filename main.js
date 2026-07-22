@@ -84,6 +84,8 @@ function stats() {
       badge: s.badge,
       model: s.model || null,
       idleMs: s.idleMs,
+      updatedAt: s.updatedAt || 0,
+      lastEvent: s.lastEvent?.rawEvent || null,
       taskTitle: s.sessionTitle || '',
       toolCalls: taskToolCounts.get(s.id) || 0,
     })),

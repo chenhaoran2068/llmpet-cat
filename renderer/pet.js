@@ -10,6 +10,7 @@ const bubbleTitle = $('bubble-title');
 const bubbleDetail = $('bubble-detail');
 const panel = $('sessions');
 const list = $('session-list');
+const sessionSummary = $('session-summary');
 const taskBubbles = $('task-bubbles');
 const doneStamp = $('done-stamp');
 const errorBox = $('error-box');
@@ -386,6 +387,28 @@ function renderTaskBubbles(sessions) {
   }
 }
 
+function taskCardState(session) {
+  if (session.badge === 'done') return { kind: 'done', icon: '✓', label: '已完成' };
+  if (session.state === 'error') return { kind: 'error', icon: '!', label: '遇到问题' };
+  if (session.state === 'working') return { kind: 'working', icon: '●', label: '进行中' };
+  if (session.state === 'thinking' && session.lastEvent === 'NeedInput') return { kind: 'needs-input', icon: '!', label: '需要你决定' };
+  if (session.state === 'thinking') return { kind: 'thinking', icon: '…', label: '正在思考' };
+  return { kind: 'paused', icon: '○', label: '暂时停下' };
+}
+
+function taskCardRank(session) {
+  const kind = taskCardState(session).kind;
+  return ({ working: 0, thinking: 1, 'needs-input': 1, error: 2, done: 3, paused: 4 })[kind] ?? 5;
+}
+
+function relativeUpdateTime(updatedAt) {
+  const seconds = Math.max(0, Math.round((Date.now() - Number(updatedAt || 0)) / 1000));
+  if (seconds < 60) return '刚刚更新';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} 分钟前更新`;
+  return `${Math.floor(minutes / 60)} 小时前更新`;
+}
+
 function render(stats) {
   currentStats = stats || { sessions: [] };
   const sessions = currentStats.sessions || [];
@@ -399,11 +422,25 @@ function render(stats) {
   aggregateState = nextAggregate;
   renderTaskBubbles(sessions);
   list.innerHTML = '';
-  for (const s of sessions) {
+  const activeCount = sessions.filter((s) => ['working', 'thinking'].includes(s.state) && s.badge !== 'done').length;
+  const completedCount = sessions.filter((s) => s.badge === 'done').length;
+  sessionSummary.textContent = activeCount
+    ? `进行中 ${activeCount} 项 · 已完成 ${completedCount} 项`
+    : completedCount ? `已完成 ${completedCount} 项 · 现在没有进行中的任务` : '现在没有进行中的任务';
+  const ordered = [...sessions].sort((a, b) => taskCardRank(a) - taskCardRank(b) || Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+  for (const s of ordered) {
+    const view = taskCardState(s);
     const row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = `<i class="dot ${s.badge === 'done' ? 'done' : s.state}"></i><span class="name"></span><span class="state"></span>`;
+    row.className = `task-card ${view.kind}`;
+    row.title = '点击回到 Codex';
+    row.innerHTML = '<div class="task-card-copy"><strong class="name"></strong><small></small></div><span class="task-card-state"></span><span class="state hidden"></span>';
     row.querySelector('.name').textContent = s.project || 'Codex';
+    const title = String(s.taskTitle || s.project || 'Codex').replace(/\s+/g, ' ').trim();
+    const source = s.taskTitle && s.project && s.taskTitle !== s.project ? `${s.project} · ` : '';
+    row.querySelector('.name').textContent = title;
+    row.querySelector('small').textContent = `${source}${relativeUpdateTime(s.updatedAt)}`;
+    row.querySelector('.task-card-state').textContent = `${view.icon} ${view.label}`;
+    row.addEventListener('click', () => window.pet.focusCodex());
     row.querySelector('.state').textContent = s.badge === 'done' ? '完成' : (labels[s.state] || s.state);
     list.appendChild(row);
   }
