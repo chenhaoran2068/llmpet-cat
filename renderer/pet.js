@@ -13,7 +13,6 @@ const list = $('session-list');
 const taskBubbles = $('task-bubbles');
 const doneStamp = $('done-stamp');
 const errorBox = $('error-box');
-const catNest = $('cat-nest');
 const notesPanel = $('notes-panel');
 const noteInput = $('note-input');
 const noteList = $('note-list');
@@ -70,34 +69,28 @@ function localDay() {
 function dailyStore() {
   const key = `llmpet-cat-day-${localDay()}`;
   try {
-    const data = JSON.parse(localStorage.getItem(key)) || { completed: 0, failures: 0, notes: [], nestItems: [], focusPacts: 0, breaks: 0 };
-    if (Object.hasOwn(data, 'stickers')) { delete data.stickers; localStorage.setItem(key, JSON.stringify(data)); }
+    const data = JSON.parse(localStorage.getItem(key)) || { completed: 0, failures: 0, notes: [], focusPacts: 0, breaks: 0 };
+    if (Object.hasOwn(data, 'stickers') || Object.hasOwn(data, 'nestItems')) {
+      delete data.stickers; delete data.nestItems; localStorage.setItem(key, JSON.stringify(data));
+    }
     return { key, data };
   }
-  catch { return { key, data: { completed: 0, failures: 0, notes: [], nestItems: [], focusPacts: 0, breaks: 0 } }; }
+  catch { return { key, data: { completed: 0, failures: 0, notes: [], focusPacts: 0, breaks: 0 } }; }
 }
 
 function saveDaily(data) {
   localStorage.setItem(`llmpet-cat-day-${localDay()}`, JSON.stringify(data));
-  renderNotesAndNest(data);
+  renderNotes(data);
 }
 
 function prepareDaily(data) {
-  data.notes ||= []; data.nestItems ||= [];
+  data.notes ||= [];
   data.focusPacts ||= 0; data.breaks ||= 0; data.failures ||= 0; data.completed ||= 0;
   return data;
 }
 
-function renderNotesAndNest(data = dailyStore().data) {
+function renderNotes(data = dailyStore().data) {
   prepareDaily(data);
-  const nest = data.nestItems.slice(-7);
-  catNest.replaceChildren();
-  const nestTitle = document.createElement('div'); nestTitle.className = 'nest-title'; nestTitle.textContent = '🪺 今日猫窝'; catNest.appendChild(nestTitle);
-  if (nest.length) {
-    const scene = document.createElement('div'); scene.className = 'nest-scene';
-    nest.forEach((item, index) => { const piece = document.createElement('span'); piece.className = 'nest-item'; piece.textContent = item.icon; piece.style.left = `${5 + index * 13}%`; piece.style.animationDelay = `${index * 65}ms`; scene.appendChild(piece); });
-    catNest.appendChild(scene);
-  } else { const empty = document.createElement('div'); empty.className = 'nest-empty'; empty.textContent = '等待第一件战利品'; catNest.appendChild(empty); }
   noteList.innerHTML = '';
   if (!data.notes.length) { noteList.textContent = '还没有便签，记下一件小事吧。'; return; }
   data.notes.forEach((note, index) => {
@@ -116,8 +109,6 @@ function recordCompletion(item = { icon: '🚩', label: '完成小旗子' }) {
   const store = dailyStore(); const data = store.data;
   prepareDaily(data);
   data.completed += 1; data.failures = 0;
-  data.nestItems.push({ icon: item.icon || '🚩', label: item.label || '完成小旗子', at: Date.now() });
-  if (data.nestItems.length > 30) data.nestItems = data.nestItems.slice(-30);
   const pending = data.notes.find((note) => !note.done);
   if (pending) pending.done = true;
   saveDaily(data);
@@ -417,7 +408,6 @@ function render(stats) {
     list.appendChild(row);
   }
   if (!sessions.length) list.textContent = '暂无 Codex 会话，猫猫正在待机。';
-  showDailyReport(nextAggregate, sessions);
 }
 
 function applyTimeTheme() {
@@ -439,17 +429,6 @@ function greetOncePerDay() {
       : ['晚上好！猫猫还在值班哦。', '夜晚模式开启，慢慢来也没关系。', '今晚也一起把事情收个尾吧。'];
   const title = choices[Math.floor(Math.random() * choices.length)];
   setTimeout(() => showBubble(title, '今天的第一条问候送给你。', 4200), 1000);
-}
-
-function showDailyReport(state, sessions) {
-  const hour = new Date().getHours();
-  if (hour < 20 || state !== 'idle' || sessions.some((s) => s.state !== 'idle')) return;
-  const key = `llmpet-cat-report-${localDay()}`;
-  if (localStorage.getItem(key)) return;
-  localStorage.setItem(key, '1');
-  const data = prepareDaily(dailyStore().data);
-  const nest = data.nestItems.slice(-6).map((item) => item.icon).join(' ');
-  setTimeout(() => showBubble('今天的猫猫小窝摆好了。', `今天一起完成了 ${data.completed} 个任务 ${nest || '🪺'}，辛苦啦！`, 6500, true), 900);
 }
 
 window.pet.onConfig(applyPetConfig);
@@ -517,8 +496,7 @@ window.pet.onEvent((e) => {
     const completed = recordCompletion(e.item);
     if (new Date().getHours() >= 21) playTheater('nightcap', 8500);
     else if (dailyStore().data.completed % 3 === 0) playTheater('crown', 7000);
-    const extra = e.item ? ` 猫窝里多了 ${e.item.icon} ${e.item.label}！` : '';
-    showBubble('任务完成了哦！', `${e.detail || ''}今日第 ${completed} 件。${extra}`, 11000, true);
+    showBubble('任务完成了哦！', `${e.detail || ''}今日第 ${completed} 件。`, 11000, true);
   }
   else if (e.kind === 'greet') { clearWorkProp(); showState('greet'); showBubble(`开始关注 ${e.project || 'Codex'}。`, '', 3000); }
   else if (e.kind === 'operation') { showState('working'); setWorkProp(e.item); }
@@ -604,7 +582,7 @@ $('cat').addEventListener('pointerup', (event) => {
 });
 $('cat').addEventListener('pointercancel', () => { drag = null; });
 $('close').addEventListener('click', () => panel.classList.add('hidden'));
-$('notes-toggle').addEventListener('click', () => { notesPanel.classList.toggle('hidden'); renderNotesAndNest(); });
+$('notes-toggle').addEventListener('click', () => { notesPanel.classList.toggle('hidden'); renderNotes(); });
 $('focus-25').addEventListener('click', () => window.pet.startFocus(25));
 $('focus-50').addEventListener('click', () => window.pet.startFocus(50));
  moodToggle.addEventListener('click', () => {
@@ -628,6 +606,6 @@ $('quit').addEventListener('click', () => window.pet.quit());
 setInterval(updateWorkMotion, 15 * 1000);
 setInterval(applyTimeTheme, 60 * 1000);
 applyTimeTheme();
-renderNotesAndNest();
+renderNotes();
 window.pet.getConfig().then(applyPetConfig);
 window.pet.getStats().then((data) => { render(data); greetOncePerDay(); });
