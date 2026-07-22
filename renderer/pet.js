@@ -13,8 +13,6 @@ const list = $('session-list');
 const taskBubbles = $('task-bubbles');
 const doneStamp = $('done-stamp');
 const errorBox = $('error-box');
-const achievementStrip = $('achievement-strip');
-const scrapbook = $('scrapbook');
 const catNest = $('cat-nest');
 const notesPanel = $('notes-panel');
 const noteInput = $('note-input');
@@ -71,28 +69,27 @@ function localDay() {
 
 function dailyStore() {
   const key = `llmpet-cat-day-${localDay()}`;
-  try { return { key, data: JSON.parse(localStorage.getItem(key)) || { completed: 0, failures: 0, notes: [], stickers: [], nestItems: [], focusPacts: 0, breaks: 0 } }; }
-  catch { return { key, data: { completed: 0, failures: 0, notes: [], stickers: [], nestItems: [], focusPacts: 0, breaks: 0 } }; }
+  try {
+    const data = JSON.parse(localStorage.getItem(key)) || { completed: 0, failures: 0, notes: [], nestItems: [], focusPacts: 0, breaks: 0 };
+    if (Object.hasOwn(data, 'stickers')) { delete data.stickers; localStorage.setItem(key, JSON.stringify(data)); }
+    return { key, data };
+  }
+  catch { return { key, data: { completed: 0, failures: 0, notes: [], nestItems: [], focusPacts: 0, breaks: 0 } }; }
 }
 
 function saveDaily(data) {
   localStorage.setItem(`llmpet-cat-day-${localDay()}`, JSON.stringify(data));
-  renderNotesAndAchievements(data);
+  renderNotesAndNest(data);
 }
 
 function prepareDaily(data) {
-  data.notes ||= []; data.stickers ||= []; data.nestItems ||= [];
+  data.notes ||= []; data.nestItems ||= [];
   data.focusPacts ||= 0; data.breaks ||= 0; data.failures ||= 0; data.completed ||= 0;
   return data;
 }
 
-function renderNotesAndAchievements(data = dailyStore().data) {
+function renderNotesAndNest(data = dailyStore().data) {
   prepareDaily(data);
-  achievementStrip.textContent = `今日节奏 · 完成 ${data.completed} · 专注 ${data.focusPacts} · 小憩 ${data.breaks}`;
-  const recent = data.stickers.slice(-8);
-  scrapbook.textContent = recent.length
-    ? `今日纪念册 · ${recent.map((item) => item.icon).join(' ')}  完成 ${data.completed} 件事`
-    : '今日纪念册 · 等待第一枚完成小贴纸';
   const nest = data.nestItems.slice(-7);
   catNest.replaceChildren();
   const nestTitle = document.createElement('div'); nestTitle.className = 'nest-title'; nestTitle.textContent = '🪺 今日猫窝'; catNest.appendChild(nestTitle);
@@ -119,10 +116,7 @@ function recordCompletion(item = { icon: '🚩', label: '完成小旗子' }) {
   const store = dailyStore(); const data = store.data;
   prepareDaily(data);
   data.completed += 1; data.failures = 0;
-  const icons = ['🐟', '⭐', '🧶', '🌸', '🍀', '🧸'];
-  data.stickers.push({ icon: icons[(data.completed - 1) % icons.length], at: Date.now() });
   data.nestItems.push({ icon: item.icon || '🚩', label: item.label || '完成小旗子', at: Date.now() });
-  if (data.stickers.length > 24) data.stickers = data.stickers.slice(-24);
   if (data.nestItems.length > 30) data.nestItems = data.nestItems.slice(-30);
   const pending = data.notes.find((note) => !note.done);
   if (pending) pending.done = true;
@@ -610,7 +604,7 @@ $('cat').addEventListener('pointerup', (event) => {
 });
 $('cat').addEventListener('pointercancel', () => { drag = null; });
 $('close').addEventListener('click', () => panel.classList.add('hidden'));
-$('notes-toggle').addEventListener('click', () => { notesPanel.classList.toggle('hidden'); renderNotesAndAchievements(); });
+$('notes-toggle').addEventListener('click', () => { notesPanel.classList.toggle('hidden'); renderNotesAndNest(); });
 $('focus-25').addEventListener('click', () => window.pet.startFocus(25));
 $('focus-50').addEventListener('click', () => window.pet.startFocus(50));
  moodToggle.addEventListener('click', () => {
@@ -634,6 +628,6 @@ $('quit').addEventListener('click', () => window.pet.quit());
 setInterval(updateWorkMotion, 15 * 1000);
 setInterval(applyTimeTheme, 60 * 1000);
 applyTimeTheme();
-renderNotesAndAchievements();
+renderNotesAndNest();
 window.pet.getConfig().then(applyPetConfig);
 window.pet.getStats().then((data) => { render(data); greetOncePerDay(); });
