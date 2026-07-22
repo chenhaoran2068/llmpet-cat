@@ -51,6 +51,8 @@ let patrolActive = false;
 let patrolTimers = [];
 let fullscreenHidden = false;
 let fullscreenProbeBusy = false;
+let lastCodexWindowPid = 0;
+let lastCodexWindowAt = 0;
 
 function frontendConfig() {
   const c = config.get();
@@ -463,6 +465,72 @@ function startCursorLookWatch() {
   }, 4 * 1000);
 }
 
+const WORK_WINDOW_PROBE = `
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class LLMPETWorkWindowProbe {
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+}
+"@
+$h = [LLMPETWorkWindowProbe]::GetForegroundWindow()
+if ($h -eq [IntPtr]::Zero) { exit }
+[uint32]$foregroundPid = 0; [void][LLMPETWorkWindowProbe]::GetWindowThreadProcessId($h, [ref]$foregroundPid)
+try { $p = Get-Process -Id $foregroundPid -ErrorAction Stop } catch { exit }
+@{ pid = [int]$foregroundPid; name = $p.ProcessName } | ConvertTo-Json -Compress
+`;
+
+function startWorkWindowWatch() {
+  if (process.platform !== 'win32') return;
+  setInterval(() => {
+    execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', WORK_WINDOW_PROBE], { windowsHide: true, timeout: 1200 }, (_error, stdout) => {
+      try {
+        const data = JSON.parse(String(stdout || '').trim());
+        if (/^(code|codex)$/i.test(String(data.name || ''))) {
+          lastCodexWindowPid = Number(data.pid) || 0;
+          lastCodexWindowAt = Date.now();
+        }
+      } catch {}
+    });
+  }, 1800);
+}
+
+function focusRecentCodexWindow() {
+  if (process.platform !== 'win32' || !lastCodexWindowPid || Date.now() - lastCodexWindowAt > 30 * 60 * 1000) return;
+  const script = `
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class LLMPETWindowFocus {
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int cmd);
+}
+"@
+try {
+  $p = Get-Process -Id ${lastCodexWindowPid} -ErrorAction Stop
+  $h = $p.MainWindowHandle
+  if ($h -ne 0) {
+    [void][LLMPETWindowFocus]::ShowWindowAsync([IntPtr]$h, 9)
+    Start-Sleep -Milliseconds 50
+    [void][LLMPETWindowFocus]::SetForegroundWindow([IntPtr]$h)
+  }
+} catch {}
+`;
+  execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, timeout: 1500 }, () => {});
+}
+
+function startAvoidanceWatch() {
+  setInterval(() => {
+    if (!win || win.isDestroyed() || !win.isVisible()) return;
+    const bounds = win.getBounds();
+    const point = screen.getCursorScreenPoint();
+    const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height - 78 };
+    const near = Math.hypot(point.x - center.x, point.y - center.y) < 112;
+    send('pet:avoid', { near });
+  }, 180);
+}
+
 const FULLSCREEN_PROBE = `
 Add-Type -TypeDefinition @"
 using System;
@@ -564,6 +632,7 @@ function returnToPreviousApp() {
   if (!win || win.isDestroyed()) return;
   win.blur();
   win.hide();
+  focusRecentCodexWindow();
 }
 
 ipcMain.handle('get-config', () => frontendConfig());
@@ -606,6 +675,8 @@ else {
     startBreakWatch();
     startUserActivityWatch();
     startCursorLookWatch();
+    startWorkWindowWatch();
+    startAvoidanceWatch();
     startFullscreenWatch();
     startPatrolWatch();
     if (process.env.LLMPET_DEMO === '1') setTimeout(runDemo, 1200);

@@ -461,6 +461,10 @@ function showDailyReport(state, sessions) {
 window.pet.onConfig(applyPetConfig);
 window.pet.onStats(render);
 window.pet.onLook((data) => { catShell.dataset.look = ['left', 'right'].includes(data && data.direction) ? data.direction : 'center'; });
+window.pet.onAvoid((data) => {
+  const shouldAvoid = Boolean(data && data.near) && !drag && panel.classList.contains('hidden') && !catShell.classList.contains('belly-play');
+  catShell.classList.toggle('avoiding', shouldAvoid);
+});
 window.pet.onEvent((e) => {
   if (e.kind === 'focus-start') {
     startFocusPact(e.endsAt);
