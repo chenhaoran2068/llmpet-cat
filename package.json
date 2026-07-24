@@ -9,7 +9,10 @@
   "scripts": {
     "start": "electron .",
     "package:win": "electron-builder --win --publish never",
-    "package:mac": "electron-builder --mac --universal --publish never",
+    "package:mac": "electron-builder --mac --publish never",
+    "package:mac:arm64": "electron-builder --mac --arm64 --publish never",
+    "package:mac:x64": "electron-builder --mac --x64 --publish never",
+    "package:mac:universal": "electron-builder --mac --universal --publish never",
     "test": "node test/core.js && node test/codex-watcher.js && node test/kimi-desktop-watcher.js && node test/project-state.js && node test/work-source-presence.js && node test/window-placement.js && node test/office-motion-assets.js && node test/office-layout.js && node test/office-management-sync.js && node test/high-frame-actions.js && node test/office-open-target.js && node test/preferences-removed.js"
   },
   "devDependencies": {
@@ -72,7 +75,8 @@
         "zip"
       ],
       "icon": "assets/icon.icns",
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "artifactName": "LLMPET-Cat-${version}-${arch}.${ext}"
     },
     "dmg": {
       "artifactName": "LLMPET-Cat-${version}-${arch}.${ext}"
