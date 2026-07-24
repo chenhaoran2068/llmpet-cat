@@ -461,7 +461,10 @@ function rebuildTray() {
     { label: '🐾 办公桌管理', submenu: officeMenu },
     { label: '🍽 停止啃屏幕', enabled: munchActive || munchWarningActive, click: () => stopMunch('tray menu') },
     { label: '🖥️ 全屏自动隐藏', type: 'checkbox', checked: c.fullscreenHide !== false, click: () => { config.save({ fullscreenHide: c.fullscreenHide === false }); rebuildTray(); } },
-    { label: '🪟 Windows 开机自启', type: 'checkbox', checked: c.autostart !== false, click: () => setAutostart(c.autostart === false) },
+    ...(process.platform === 'win32' ? [{
+      label: '🪟 Windows 开机自启', type: 'checkbox', checked: c.autostart !== false,
+      click: () => setAutostart(c.autostart === false),
+    }] : []),
     { type: 'separator' },
     { label: '📄 打开日志', click: () => shell.openPath(LOG_PATH) },
     { label: '⏻ 退出', click: () => app.quit() },
