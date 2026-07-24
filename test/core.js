@@ -1,6 +1,7 @@
 'use strict';
 const assert = require('assert');
 const { createCore } = require('../backend/core');
+const { workTargetFor } = require('../backend/work-target');
 const events = [];
 const core = createCore({ onActivity: (e) => events.push(e) });
 core.updateSession('s1', 'thinking', 'UserPromptSubmit', { cwd: 'C:\\demo', model: 'gpt-test' });
@@ -10,4 +11,28 @@ const s = core.buildSnapshot().sessions[0];
 assert.strictEqual(s.badge, 'done');
 assert.strictEqual(s.model, 'gpt-test');
 assert(events.at(-1).realCompletion);
+core.updateSession('s1', 'thinking', 'SessionActivity');
+assert.strictEqual(core.buildSnapshot().sessions[0].badge, 'running', 'fresh activity must clear an old completion badge');
+
+const restoredEvents = [];
+const restored = createCore({ onActivity: (event) => restoredEvents.push(event) });
+restored.updateSession('history', 'idle', 'Stop', { eventAt: 12345, silent: true });
+assert.strictEqual(restoredEvents.length, 0, 'history restoration must not replay completion activity');
+assert.strictEqual(restored.buildSnapshot().sessions[0].updatedAt, 12345, 'history must retain the original event time');
+
+const workspace = 'C:\\demo';
+const vscode = workTargetFor({ cwd: workspace, originator: 'codex_vscode' });
+const desktop = workTargetFor({ cwd: workspace, originator: 'Codex Desktop', sessionSource: 'vscode', threadSource: 'user' });
+const cli = workTargetFor({ cwd: workspace, originator: 'Codex CLI' });
+const kimiDesktop = workTargetFor({ id: 'kimi-desktop:conversation-a', originator: 'Kimi Desktop', sessionSource: 'kimi-desktop', threadSource: 'desktop', sessionTitle: 'Kimi Desktop 对话 abc123' });
+const vscodeOtherWindow = workTargetFor({ cwd: 'C:\\another-project', originator: 'codex_vscode' });
+assert.strictEqual(vscode.key, 'vscode:codex');
+assert.strictEqual(desktop.key, 'desktop:c:\\demo');
+assert.strictEqual(cli.key, 'cli:c:\\demo');
+assert.strictEqual(kimiDesktop.source, 'kimi-desktop');
+assert.strictEqual(kimiDesktop.project, 'Kimi Desktop 对话 abc123');
+assert.strictEqual(vscodeOtherWindow.key, vscode.key, 'all VS Code windows must share one desktop-pet target');
+assert.notStrictEqual(vscode.key, desktop.key);
+assert.notStrictEqual(desktop.key, cli.key);
+assert.notStrictEqual(kimiDesktop.key, cli.key);
 console.log('codex core: ok');

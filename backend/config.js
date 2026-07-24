@@ -5,7 +5,7 @@ const path = require('path');
 const { log } = require('./log');
 const CONFIG_DIR = path.join(os.homedir(), '.octopus');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
-const DEFAULTS = Object.freeze({ petPosition: null, muted: false, autostart: true, quietMode: false, clickThrough: false, gifMood: 'balanced', fullscreenHide: true });
+const DEFAULTS = Object.freeze({ petPosition: null, autostart: true, fullscreenHide: true });
 let cache = null;
 function sanitize(raw) {
   const out = { ...DEFAULTS };
@@ -13,11 +13,7 @@ function sanitize(raw) {
   if (raw.petPosition && Number.isFinite(raw.petPosition.x) && Number.isFinite(raw.petPosition.y)) {
     out.petPosition = { x: Math.round(raw.petPosition.x), y: Math.round(raw.petPosition.y) };
   }
-  out.muted = !!raw.muted;
   out.autostart = raw.autostart !== false;
-  out.quietMode = !!raw.quietMode;
-  out.clickThrough = !!raw.clickThrough;
-  out.gifMood = ['calm', 'balanced', 'lively'].includes(raw.gifMood) ? raw.gifMood : 'balanced';
   out.fullscreenHide = raw.fullscreenHide !== false;
   return out;
 }

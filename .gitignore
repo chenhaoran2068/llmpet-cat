@@ -25,6 +25,30 @@ sessions/
 # Image iteration backups (not part of the shipped art)
 assets/_orig_mascot/
 
+# Local animation workbench and retired art. The app bundles only the selected
+# root GIFs, three active identity action sets, and four desk layers.
+animation-runs/
+work/
+scripts/
+tools/*
+!tools/build_frame_preserving_identity_actions.py
+!tools/build_full_animation_catalog.py
+assets/mascot*.png
+assets/cat/cat-belly-*-green.png
+assets/cat/qq-post-2026-05-29/
+assets/cat/office/
+assets/cat/office-scene/animations/
+assets/cat/office-scene/motions/
+assets/cat/office-scene/hq/
+assets/cat/office-scene/expressive/
+assets/cat/office-scene/generated/
+assets/cat/office-scene/actions/plain/
+assets/cat/office-scene/actions/analyst/
+assets/cat/office-scene/actions/**/*.png
+assets/cat/office-scene/actions/**/*.gif
+assets/cat/office-scene/cats/
+assets/cat/office-scene/desks/analyst.png
+
 # OS / logs
 .DS_Store
 *.log
