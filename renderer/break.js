@@ -12,7 +12,7 @@ function tellPet(action) {
 }
 
 function disableChoices() {
-  choices.querySelectorAll('button').forEach((button) => { button.disabled = true; });
+  choices.querySelectorAll('button:not([data-action="close"])').forEach((button) => { button.disabled = true; });
 }
 
 function beginBreathing() {
@@ -40,5 +40,6 @@ choices.addEventListener('click', (event) => {
   if (action === 'water') { disableChoices(); tellPet('water'); result.textContent = '喝水打卡成功！猫猫为你鼓爪。'; }
   if (action === 'breathe') beginBreathing();
   if (action === 'find') beginFindCat();
+  if (action === 'close') tellPet('close');
 });
 catSpot.addEventListener('click', () => { tellPet('find'); findGame.classList.add('hidden'); result.textContent = '找到了！休息也是一种小胜利。'; });

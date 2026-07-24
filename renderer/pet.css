@@ -13,8 +13,67 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
 .cat[data-difficulty="hard"] img { animation: hard-focus .55s ease-in-out infinite; filter: drop-shadow(0 5px 5px rgba(66,36,20,.16)) saturate(1.12); }
 .cat[data-look="left"] img { transform: rotate(-4deg) translateX(-3px); } .cat[data-look="right"] img { transform: rotate(4deg) translateX(3px); }
 .status { position: absolute; bottom: 142px; left: 50%; transform: translateX(-50%); padding: 5px 11px; border-radius: 999px; color: #765240; background: rgba(255,248,238,.94); box-shadow: 0 3px 10px rgba(80,45,24,.12); font-size: 12px; white-space: nowrap; }
-.focus-pact { position: absolute; z-index: 5; right: 8px; bottom: 126px; display: grid; gap: 1px; padding: 5px 8px; border: 2px solid #9b6749; border-radius: 12px 8px 12px 8px; color: #6b4533; background: rgba(255,245,229,.97); box-shadow: 2px 3px 0 rgba(110,68,43,.2); font-size: 10px; transform: rotate(3deg); -webkit-app-region: no-drag; }
-.focus-pact b { color: #c26043; font-size: 16px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.office-board { position: absolute; z-index: 3; inset: 2px; overflow: hidden; border-radius: 19px; background: linear-gradient(180deg, rgba(255,250,239,.98) 0 40%, rgba(241,215,180,.98) 40% 100%); box-shadow: inset 0 -10px 24px rgba(130,82,49,.09), 0 2px 8px rgba(90,55,34,.1); -webkit-app-region: drag; }
+.office-board::before { content: ''; position: absolute; z-index: 0; left: -10%; right: -10%; top: 40%; height: 2px; background: rgba(126,82,54,.18); box-shadow: 0 23px 0 rgba(151,100,63,.09), 0 46px 0 rgba(151,100,63,.09), 0 69px 0 rgba(151,100,63,.09); transform: rotate(-1deg); }
+.office-board::after { content: 'CAT OFFICE'; position: absolute; top: 7px; left: 10px; color: rgba(115,77,53,.34); font: 800 8px/1 "Microsoft YaHei UI", sans-serif; letter-spacing: .13em; pointer-events: none; }
+.office-station { position: absolute; z-index: 1; width: 126px; height: 125px; display: block; padding: 0; color: #654838; background: transparent; cursor: grab; -webkit-app-region: no-drag; }
+.office-station:active { cursor: grabbing; }
+.office-station:nth-child(1) { left: 50%; bottom: 0; transform: translateX(-50%); }
+body[data-office-count="2"] .office-station:nth-child(1) { left: 25%; } body[data-office-count="2"] .office-station:nth-child(2) { left: 75%; bottom: 0; transform: translateX(-50%); }
+body[data-office-count="3"] .office-station:nth-child(1), body[data-office-count="4"] .office-station:nth-child(1) { left: 50%; bottom: 107px; transform: translateX(-50%) scale(.82); transform-origin: bottom center; opacity: .9; }
+body[data-office-count="3"] .office-station:nth-child(2), body[data-office-count="4"] .office-station:nth-child(2) { left: 25%; bottom: 0; transform: translateX(-50%); } body[data-office-count="3"] .office-station:nth-child(3), body[data-office-count="4"] .office-station:nth-child(3) { left: 75%; bottom: 0; transform: translateX(-50%); }
+body[data-office-count="4"] .office-station:nth-child(4) { left: 50%; bottom: 51px; transform: translateX(-50%) scale(.72); transform-origin: bottom center; opacity: .84; }
+.office-nameplate { position: absolute; z-index: 5; top: 3px; left: 50%; width: 112px; display: grid; gap: 1px; padding: 3px 6px; border-radius: 8px; color: #604435; background: rgba(255,253,247,.78); box-shadow: 0 1px 3px rgba(95,58,36,.13); transform: translateX(-50%); pointer-events: none; }
+.office-nameplate b { overflow: hidden; font-size: 9px; line-height: 1.2; text-align: center; text-overflow: ellipsis; white-space: nowrap; }.office-nameplate small { color: #98735f; font-size: 8px; font-weight: 800; text-align: center; }
+.office-scene-desk { position: absolute; left: 4px; right: 4px; bottom: 1px; height: 90px; display: block; pointer-events: none; }
+.office-desk-back { position: absolute; z-index: 1; top: 49px; left: 3px; right: 3px; height: 18px; border: 2px solid #704a32; border-radius: 5px 5px 3px 3px; background: #d69b62; box-shadow: inset 0 3px 0 rgba(255,240,211,.45); }
+.office-desk-front { position: absolute; z-index: 4; top: 65px; left: 9px; right: 9px; height: 24px; border: 2px solid #704a32; border-top: 0; border-radius: 0 0 5px 5px; background: linear-gradient(90deg, #ae7146 0 12%, #d79a63 12% 88%, #ae7146 88%); }
+.office-desk-front::before, .office-desk-front::after { content: ''; position: absolute; top: 0; width: 5px; height: 22px; background: #714931; }.office-desk-front::before { left: 7px; }.office-desk-front::after { right: 7px; }
+.office-cat-layer { position: absolute; z-index: 2; left: 50%; bottom: 18px; width: 75px; height: 75px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(66,36,20,.13)); transform: translateX(-50%); transform-origin: center bottom; }
+.office-desk-prop { position: absolute; z-index: 3; right: 9px; bottom: 53px; display: grid; width: 18px; height: 16px; place-items: center; border-radius: 3px; color: #624634; background: rgba(255,246,227,.86); font: 800 11px/1 "Microsoft YaHei UI", sans-serif; }
+.office-station[data-identity="programmer"] .office-desk-back { background: #758da6; }.office-station[data-identity="writer"] .office-desk-back { background: #b48569; }.office-station[data-identity="chubby"] .office-desk-back { background: #d4985b; }
+.office-station[data-state="needs-input"] .office-nameplate { color: #99431f; background: #fff1e5; animation: office-note 1.25s ease-in-out infinite; }.office-station[data-state="gentle-failure"] .office-nameplate { background: #fff5ef; }.office-station[data-state="celebration"] .office-nameplate { color: #2d6594; background: #eef8ff; }
+.office-station[data-state="writing"] .office-cat-layer, .office-station[data-state="coding"] .office-cat-layer { animation: cat-type 1.05s ease-in-out infinite; }.office-station[data-state="analysis"] .office-cat-layer, .office-station[data-state="research"] .office-cat-layer { animation: cat-think 1.8s ease-in-out infinite; }.office-station[data-state="needs-input"] .office-cat-layer { animation: cat-ask 1.1s ease-in-out infinite; }.office-station[data-state="gentle-failure"] .office-cat-layer { animation: cat-sigh 2.4s ease-in-out infinite; }.office-station[data-state="celebration"] .office-cat-layer { animation: cat-celebrate .74s ease-in-out infinite; }
+@keyframes cat-type { 0%,100% { transform: translateX(-50%) translateY(0) rotate(0); } 50% { transform: translateX(-50%) translateY(1px) rotate(-1.2deg); } } @keyframes cat-think { 0%,100% { transform: translateX(-50%) rotate(0); } 45% { transform: translateX(-50%) translateY(-1px) rotate(2deg); } 70% { transform: translateX(-50%) rotate(-1deg); } } @keyframes cat-ask { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-4px); } } @keyframes cat-sigh { 0%,100% { transform: translateX(-50%) translateY(1px) scaleY(.98); } 50% { transform: translateX(-50%) translateY(3px) scaleY(.96); } } @keyframes cat-celebrate { 0%,100% { transform: translateX(-50%) translateY(0) rotate(-2deg); } 50% { transform: translateX(-50%) translateY(-7px) rotate(2deg); } } @keyframes office-note { 0%,100% { transform: translateX(-50%) rotate(0); } 50% { transform: translateX(-50%) rotate(-2deg); } }
+/* Identity desks are artwork, not generic CSS furniture.  Only the cat layer moves. */
+.office-board { inset: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: visible; }
+.office-board::before, .office-board::after { display: none; }
+.office-station { width: 138px; height: 142px; }
+.office-nameplate { top: 0; bottom: auto; width: 122px; padding: 0; color: rgba(83,55,40,.86); background: transparent; box-shadow: none; text-shadow: 0 1px 1px rgba(255,255,255,.9); }
+.office-nameplate b { font-size: 10px; }.office-nameplate small { display: inline; color: #865d48; font-size: 9px; }.office-nameplate small::before { content: '• '; font-size: 12px; vertical-align: -1px; }.office-station[data-state="needs-input"] .office-nameplate, .office-station[data-state="gentle-failure"] .office-nameplate, .office-station[data-state="celebration"] .office-nameplate { background: transparent; }
+.office-nameplate small { display: none; }
+.office-scene-desk { left: 0; right: 0; bottom: 9px; height: 128px; overflow: visible; }
+.office-cat-layer { z-index: 2; bottom: 43px; width: 70px; height: 80px; }
+.office-desk-layer { position: absolute; z-index: 3; left: 50%; bottom: 0; width: 116px; max-height: 101px; object-fit: contain; object-position: bottom center; transform: translateX(-50%); pointer-events: none; }
+body[data-office-count="1"] .office-station { width: 164px; height: 160px; } body[data-office-count="1"] .office-scene-desk { height: 148px; } body[data-office-count="1"] .office-cat-layer { width: 86px; height: 96px; bottom: 56px; } body[data-office-count="1"] .office-desk-layer { width: 138px; max-height: 119px; }
+body[data-office-count="3"] .office-station:nth-child(1) { left: 50%; bottom: 144px; transform: translateX(-50%) scale(.75); transform-origin: bottom center; opacity: 1; }
+body[data-office-count="3"] .office-station:nth-child(2) { left: 25%; bottom: 0; transform: translateX(-50%); } body[data-office-count="3"] .office-station:nth-child(3) { left: 75%; bottom: 0; transform: translateX(-50%); }
+body[data-office-count="4"] .office-station { width: 138px; height: 142px; opacity: 1; transform: translateX(-50%) scale(.75) !important; transform-origin: center center; }
+body[data-office-count="4"] .office-station:nth-child(1) { left: 25%; top: -4px; bottom: auto; } body[data-office-count="4"] .office-station:nth-child(2) { left: 75%; top: -4px; bottom: auto; } body[data-office-count="4"] .office-station:nth-child(3) { left: 25%; top: auto; bottom: -4px; } body[data-office-count="4"] .office-station:nth-child(4) { left: 75%; top: auto; bottom: -4px; }
+/* All plots use the same cat size; depth comes from spacing and the ground tiles, not scaling. */
+.office-station { width: 118px; height: 128px; }
+.office-scene-desk { height: 116px; }.office-cat-layer { width: 56px; height: 68px; bottom: 37px; }.office-desk-layer { width: 96px; max-height: 84px; }.office-lot { width: 100px; height: 54px; }
+.office-nameplate { width: 116px; }
+body[data-office-count="1"] .office-station { width: 154px; height: 156px; } body[data-office-count="1"] .office-scene-desk { height: 142px; } body[data-office-count="1"] .office-cat-layer { width: 74px; height: 86px; bottom: 51px; } body[data-office-count="1"] .office-desk-layer { width: 120px; max-height: 104px; }
+body[data-office-count="3"] .office-station:nth-child(1) { left: 50%; top: 0; bottom: auto; transform: translateX(-50%) !important; } body[data-office-count="3"] .office-station:nth-child(2) { left: 25%; bottom: 0; transform: translateX(-50%) !important; } body[data-office-count="3"] .office-station:nth-child(3) { left: 75%; bottom: 0; transform: translateX(-50%) !important; }
+body[data-office-count="4"] .office-station { width: 118px; height: 128px; transform: translateX(-50%) !important; transform-origin: center center; } body[data-office-count="4"] .office-station:nth-child(1) { left: 25%; top: 0; bottom: auto; } body[data-office-count="4"] .office-station:nth-child(2) { left: 75%; top: 0; bottom: auto; } body[data-office-count="4"] .office-station:nth-child(3) { left: 25%; top: auto; bottom: 0; } body[data-office-count="4"] .office-station:nth-child(4) { left: 75%; top: auto; bottom: 0; }
+body[data-office-count="5"] .office-station { width: 118px; height: 128px; transform: translateX(-50%) !important; transform-origin: center center; }
+body[data-office-count="5"] .office-station:nth-child(1) { left: 50%; top: 0; bottom: auto; }
+body[data-office-count="5"] .office-station:nth-child(2) { left: 18%; top: 72px; bottom: auto; }
+body[data-office-count="5"] .office-station:nth-child(3) { left: 82%; top: 72px; bottom: auto; }
+body[data-office-count="5"] .office-station:nth-child(4) { left: 32%; top: auto; bottom: 0; }
+body[data-office-count="5"] .office-station:nth-child(5) { left: 68%; top: auto; bottom: 0; }
+body[data-office-count="3"] .office-station:nth-child(1) .office-nameplate, body[data-office-count="4"] .office-nameplate { transform: translateX(-50%); }
+body.office-mode .cat, body.office-mode .status, body.office-mode .task-bubbles, body.office-mode .help-sign, body.office-mode .next-note { display: none !important; }
+body.office-mode .bubble { z-index: 9; top: 3px; left: 5px; right: 5px; max-height: 32px; min-height: 0; padding: 5px 8px; overflow: hidden; border-width: 1.5px; border-radius: 11px; box-shadow: 1px 2px 0 rgba(91,67,57,.18); background: rgba(255,254,250,.94); }
+body.office-mode .bubble::after, body.office-mode .bubble .bubble-detail { display: none; }
+body.office-mode .bubble .bubble-title, body.office-mode .bubble.completion .bubble-title { overflow: hidden; font-size: 10px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+/* A small isometric "plot" gives each desk a place without turning it into a card. */
+.office-scene-desk { perspective: 500px; }
+.office-lot { position: absolute; z-index: 0; left: 50%; bottom: 0; width: 120px; height: 64px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: linear-gradient(135deg, rgba(255,248,229,.9), rgba(224,190,143,.52)); box-shadow: 0 8px 11px rgba(96,58,35,.18); transform: translateX(-50%) scaleY(.6); transform-origin: bottom center; }
+.office-station[data-identity="programmer"] .office-lot { background: linear-gradient(135deg, rgba(222,235,243,.9), rgba(136,164,179,.5)); }.office-station[data-identity="writer"] .office-lot { background: linear-gradient(135deg, rgba(255,237,207,.92), rgba(207,160,106,.5)); }.office-station[data-identity="chubby"] .office-lot { background: linear-gradient(135deg, rgba(255,230,195,.92), rgba(211,139,76,.5)); }
+.office-menu { position: absolute; z-index: 30; width: 182px; display: grid; gap: 4px; padding: 8px; border: 1.5px solid #6c4a39; border-radius: 12px 12px 12px 5px; color: #553d32; background: rgba(255,253,247,.98); box-shadow: 3px 4px 0 rgba(91,67,57,.24); -webkit-app-region: no-drag; }
+.office-menu strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.office-menu button { padding: 5px 7px; border-radius: 7px; color: #654838; background: #f3e5d6; font-size: 11px; text-align: left; }.office-rename-row { display: flex; gap: 4px; }.office-rename-row input { min-width: 0; flex: 1; padding: 5px 6px; border: 1px solid #d4bba7; border-radius: 7px; color: #563e32; background: #fffdf9; font: 11px "Microsoft YaHei UI", sans-serif; }.office-rename-row button { flex: 0 0 auto; }.office-menu-title { margin-top: 2px; color: #9a694e; font-size: 10px; font-weight: 800; }.office-project-choices { display: grid; gap: 2px; max-height: 96px; overflow: auto; padding-top: 2px; border-top: 1px dashed #dfc9b8; }.office-project-choices label { display: flex; align-items: center; gap: 5px; min-width: 0; padding: 2px; color: #654838; font-size: 10px; }.office-project-choices span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.office-project-choices input { margin: 0; accent-color: #9c654b; }
 .help-sign { position: absolute; z-index: 6; left: 8px; bottom: 111px; padding: 7px 9px; border: 2px solid #765240; border-radius: 13px 13px 5px 13px; color: #5b4034; background: #fff8e9; box-shadow: 2px 3px 0 rgba(91,67,57,.18); font-size: 11px; font-weight: 800; transform: rotate(-3deg); animation: help-bob 1s ease-in-out infinite; -webkit-app-region: no-drag; }
 .next-note { position: absolute; z-index: 7; left: 14px; bottom: 82px; padding: 6px 9px; border: 2px solid #c4774f; border-radius: 5px 12px 12px 12px; color: #704432; background: #fff0d8; box-shadow: 2px 3px 0 rgba(120,66,38,.18); font: 800 11px "Microsoft YaHei UI", sans-serif; transform: rotate(2deg); -webkit-app-region: no-drag; animation: note-wiggle 1.4s ease-in-out infinite; }
 .bubble { position: absolute; z-index: 4; top: 5px; left: 10px; right: 10px; padding: 10px 13px; max-height: 122px; overflow: hidden; border: 2px solid #5b4339; border-radius: 19px 16px 20px 13px; background: rgba(255,254,250,.98); color: #3f2f29; box-shadow: 3px 4px 0 rgba(91,67,57,.24); font-size: 12px; line-height: 1.45; -webkit-app-region: no-drag; }
@@ -27,15 +86,13 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
 .dot { width: 8px; height: 8px; border-radius: 50%; background: #b9b2aa; box-shadow: 0 1px 3px #fff; }
 .dot.working { background: #50a975; } .dot.thinking { background: #e6a64b; } .dot.error { background: #d85a5a; } .dot.done { background: #68a7dc; }
 .panel { position: absolute; z-index: 8; inset: 8px; padding: 11px; border: 1px solid rgba(129,87,57,.18); border-radius: 16px; background: rgba(255,251,244,.98); color: #5e4537; box-shadow: 0 10px 30px rgba(65,38,22,.2); -webkit-app-region: no-drag; }
+.panel .session-summary, .panel #session-list { display: none; }
 .panel header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
 button { border: 0; border-radius: 10px; padding: 7px 10px; color: #6a4938; background: #f1e3d3; cursor: pointer; }
 #close { font-size: 20px; padding: 0 8px; background: transparent; }
 #notes-toggle { padding: 3px 7px; margin-right: 2px; font-size: 11px; }
 .session-summary { margin: 5px 0 3px; color: #8b604a; font-size: 10px; font-weight: 800; }
 #session-list { display: grid; gap: 4px; height: 82px; margin: 0 0 5px; overflow: auto; }
-.focus-actions { display: flex; align-items: center; gap: 5px; margin: -2px 0 6px; color: #8b604a; font-size: 11px; }
-.focus-actions span { margin-right: auto; font-weight: 700; }.focus-actions button { padding: 4px 7px; font-size: 10px; }
-.pet-preferences { display: flex; gap: 4px; margin: -2px 0 5px; }.pet-preferences button { flex: 1; padding: 4px 3px; font-size: 9px; white-space: nowrap; }.pet-preferences button.active { color: #fffaf0; background: #b87858; }
 .task-card { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; align-items: center; min-height: 37px; padding: 5px 6px 5px 8px; border: 1px solid #e5d7c8; border-left: 4px solid #aaa; border-radius: 9px; background: #fffdf9; box-shadow: 0 1px 0 rgba(100,60,35,.07); cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
 .task-card:hover { transform: translateX(2px); box-shadow: 2px 2px 0 rgba(100,60,35,.12); }
 .task-card-copy { min-width: 0; display: grid; gap: 1px; }.task-card strong { overflow: hidden; color: #5b4034; font-size: 11px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }.task-card small { overflow: hidden; color: #9b7c69; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
@@ -87,9 +144,238 @@ body.night .bubble::after { background: #3c2a37; border-color: #d7aa84; }
 body.night .bubble-detail { color: #e4c9bc; }
 body.night .done-stamp { background: rgba(71,43,53,.92); }
 body.night .ambience { opacity: .8; } body.night #stage::after { content: ''; position: absolute; z-index: 0; left: 12px; bottom: 7px; width: 48px; height: 32px; border-radius: 50% 50% 8px 8px; background: radial-gradient(circle at 50% 0, rgba(255,213,140,.55), rgba(255,180,80,.08) 45%, transparent 70%); pointer-events: none; }
+/* A quiet project leaves its desk after one minute.  The fixed identity cat
+   stays in place and cycles through its own no-desk rest poses. */
+.office-station[data-state="resting"] .office-desk-layer, .office-station[data-state="resting"] .office-lot { display: none; }
+.office-station[data-state="resting"] .office-cat-layer { bottom: 5px; width: 92px; height: 92px; animation: cat-rest 1.75s ease-in-out infinite; }
+body[data-office-count="1"] .office-station[data-state="resting"] .office-cat-layer { bottom: 4px; width: 118px; height: 118px; }
+@keyframes cat-rest { 0%,100% { transform: translateX(-50%) translateY(0) rotate(-1deg); } 50% { transform: translateX(-50%) translateY(-3px) rotate(1deg); } }
+/* Manga-style speech belongs to the cat that received the Codex event. */
+.office-callout { position: absolute; z-index: 16; top: 15px; left: 61%; width: 144px; max-width: calc(100vw - 10px); display: grid; gap: 3px; padding: 6px 8px; border: 1.5px solid #5b4339; border-radius: 15px 15px 15px 4px; color: #49332b; background: rgba(255,254,250,.98); box-shadow: 2px 2px 0 rgba(91,67,57,.2); font: 800 10px/1.35 "Microsoft YaHei UI", sans-serif; text-align: left; pointer-events: none; transform: rotate(-1deg); overflow: visible; }
+.office-callout::after { content: ''; position: absolute; left: var(--callout-tail-left, 13px); bottom: -7px; width: 11px; height: 11px; border-right: 1.5px solid #5b4339; border-bottom: 1.5px solid #5b4339; background: #fffefa; transform: rotate(45deg); }
+.office-callout b, .office-callout small { overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }.office-callout small { color: #76574a; font-size: 9px; font-weight: 600; }
+.office-station:nth-child(even) .office-callout { right: 61%; left: auto; border-radius: 15px 15px 4px 15px; transform: rotate(1deg); }.office-station:nth-child(even) .office-callout::after { right: auto; left: var(--callout-tail-left, 13px); }
+.office-identity-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.office-menu .office-identity-choice { min-width: 0; padding: 4px 5px; border: 1px solid #e3cdbc; border-radius: 7px; color: #654838; background: #fff9f1; font-size: 9px; line-height: 1.25; text-align: center; }
+.office-menu .office-identity-choice.active { border-color: #8a5b43; color: #fffaf4; background: #9a674c; box-shadow: inset 0 1px 0 rgba(255,255,255,.24); }
+.office-menu { max-height: calc(100% - 8px); overflow-y: auto; }
+/* Office movement comes from real GIF frames.  Never fake it by moving the
+   whole image box, otherwise the cat and its held prop float together. */
+.office-cat-layer.office-action-gif { animation: none !important; }
+/* Right-click opens an anchored, scrollable sheet.  It deliberately leaves
+   part of the office exposed, so a left click on another cat can dismiss it. */
+.office-menu {
+  inset: auto;
+  box-sizing: border-box;
+  width: 204px;
+  max-height: min(132px, calc(100% - 12px));
+  gap: 5px;
+  padding: 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.office-menu strong { font-size: 11px; line-height: 1.3; }
+.office-menu button {
+  box-sizing: border-box;
+  min-height: 26px;
+  padding: 4px 7px;
+  font-size: 10px;
+  line-height: 1.25;
+}
+.office-rename-row { min-height: 26px; align-items: stretch; }
+.office-rename-row input {
+  box-sizing: border-box;
+  height: 26px;
+  min-height: 26px;
+  padding: 4px 6px;
+  font-size: 10px;
+  line-height: 1.2;
+}
+.office-rename-row button { height: 26px; min-height: 26px; white-space: nowrap; }
+.office-project-choices { max-height: 72px; overflow-y: auto; }
+.office-menu .office-focus-button { border: 1px solid #596674; color: #f8fbff; background: #536576; box-shadow: inset 0 1px 0 rgba(255,255,255,.15); font-weight: 800; text-align: center; }
+.office-menu .office-focus-button:hover { background: #435463; }
+.office-target-select { width: 100%; min-height: 26px; padding: 4px 6px; border: 1px solid #d4bba7; border-radius: 7px; color: #563e32; background: #fffdf9; font: 10px "Microsoft YaHei UI", sans-serif; }
+/* No-desk trial: the project cats read as a small shared cast instead of
+   furniture cards.  Their hand-held prop remains inside the action GIF. */
+.office-desk-layer, .office-lot { display: none !important; }
+.office-scene-desk { bottom: 2px; height: 108px; }
+.office-cat-layer, .office-station[data-state="resting"] .office-cat-layer,
+body[data-office-count="1"] .office-station[data-state="resting"] .office-cat-layer {
+  left: 50% !important;
+  bottom: 6px !important;
+  width: 70px;
+  height: 84px;
+}
+body[data-office-count="1"] .office-cat-layer { width: 86px; height: 102px; bottom: 5px !important; }
+/* The project name stays clear, while its small work sign explains what the
+   fixed cat is doing without becoming another task card or covering its face. */
+.office-nameplate {
+  top: 1px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: max-content;
+  min-width: 42px;
+  max-width: 120px;
+}
+.office-nameplate b {
+  max-width: 120px;
+  padding: 0 3px;
+  font-size: 10px;
+  line-height: 1.2;
+}
+.office-nameplate small {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 14px;
+  padding: 1px 6px;
+  border: 1px solid rgba(120, 82, 56, .25);
+  border-radius: 8px 8px 6px 6px;
+  color: #70513f;
+  background: rgba(255, 252, 244, .92);
+  box-shadow: 0 1px 1px rgba(89, 54, 35, .12);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-shadow: none;
+}
+.office-nameplate small::before {
+  content: '•';
+  color: #aa7659;
+  font-size: 10px;
+  line-height: 1;
+}
+.office-station[data-state="writing"] .office-nameplate small::before { content: '✎'; }
+.office-station[data-state="research"] .office-nameplate small::before { content: '⌕'; }
+.office-station[data-state="analysis"] .office-nameplate small::before { content: '…'; }
+.office-station[data-state="coding"] .office-nameplate small::before { content: '⌘'; }
+.office-station[data-state="needs-input"] .office-nameplate small { color: #9a4828; background: rgba(255, 241, 224, .96); border-color: rgba(175, 86, 44, .34); animation: office-note 1.25s ease-in-out infinite; }
+.office-station[data-state="needs-input"] .office-nameplate small::before { content: '？'; color: #b25530; }
+.office-station[data-state="gentle-failure"] .office-nameplate small { color: #8a654f; background: rgba(255, 247, 239, .96); }
+.office-station[data-state="gentle-failure"] .office-nameplate small::before { content: '↺'; }
+.office-station[data-state="celebration"] .office-nameplate small { color: #2e6d98; background: rgba(238, 249, 255, .96); border-color: rgba(71, 133, 173, .28); }
+.office-station[data-state="celebration"] .office-nameplate small::before { content: '✓'; color: #2e83b7; }
+.office-station[data-state="resting"] .office-nameplate small { color: #6d6687; background: rgba(246, 244, 255, .94); border-color: rgba(103, 93, 140, .24); }
+.office-station[data-state="resting"] .office-nameplate small::before { content: '☾'; color: #776a9c; }
+/* Keep the office legible without frosting the entire pet window.  The glass
+   is a fixed stage behind the cats only; manga speech always lives in the
+   clear space above it. */
+body.office-mode .office-board {
+  inset: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+/* The night ambience belongs to the single-cat pet.  In the project office it
+   used to paint stars through the otherwise transparent speech headroom,
+   making the empty part of the native window look like a second backdrop.
+   A project bubble is intentionally the only artwork allowed above the cast. */
+body.office-mode .ambience,
+body.office-mode #stage::after {
+  display: none !important;
+}
+body.office-mode .office-board::before {
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 0;
+  top: auto;
+  right: auto;
+  bottom: 0;
+  left: var(--office-stage-glass-left, 0px);
+  width: var(--office-stage-glass-width, 100%);
+  height: var(--office-stage-glass-height, 118px);
+  border: 1px solid rgba(255,255,255,.52);
+  border-radius: 18px;
+  background: radial-gradient(circle at 16% 18%, rgba(255,255,255,.55), transparent 34%), radial-gradient(circle at 84% 82%, rgba(177,209,238,.25), transparent 41%), linear-gradient(145deg, rgba(255,252,246,.83), rgba(239,246,253,.68));
+  box-shadow: 0 8px 26px rgba(61,75,95,.17), inset 0 1px 0 rgba(255,255,255,.72);
+  backdrop-filter: blur(13px) saturate(.84);
+  -webkit-backdrop-filter: blur(13px) saturate(.84);
+  transform: none;
+  pointer-events: none;
+}
+/* A shared cast needs breathing room: names and cats must never stack over
+   one another. A temporary manga bubble uses the clear space above this
+   bottom-anchored glass stage, so it cannot resize or shift the backdrop. */
+body.office-mode .office-station { width: 110px; height: 118px; }
+body.office-mode .office-scene-desk { bottom: 0; height: 98px; }
+body.office-mode .office-cat-layer,
+body.office-mode .office-station[data-state="resting"] .office-cat-layer,
+body.office-mode[data-office-count="1"] .office-station[data-state="resting"] .office-cat-layer {
+  width: 70px;
+  height: 84px;
+  bottom: 4px !important;
+}
+body.office-mode[data-office-count="1"] .office-station { width: 138px; height: 132px; }
+body.office-mode[data-office-count="1"] .office-cat-layer { width: 78px; height: 92px; }
+/* Motion calibration uses the cat pose, never a prop or a companion animal. */
+body.office-mode .office-cat-layer.office-action-gif {
+  transform: translateX(-50%) translateY(var(--office-motion-y, 0px)) scale(var(--office-motion-scale, 1)) !important;
+  transform-origin: center bottom;
+}
+/* A work-state change must never fake animation by bouncing the full sprite.
+   That was the remaining cause of the small vertical/sideways flicker: fixed
+   cats and their props moved as one bitmap even when their GIF itself was
+   stable.  Office motion now comes only from an audited multi-frame asset. */
+body.office-mode .office-station .office-cat-layer {
+  animation: none !important;
+}
+/* Two cats are a little working pair, not two distant islands at the window
+   edges.  Keep their centres a fixed 90px apart around the stage centre.  The
+   calibrated 81px image boxes still leave a visible gap, while the actual cat
+   silhouettes have appreciably more breathing room.  Fixed pixels also keep
+   this composition compact when Windows display scaling changes the window. */
+body.office-mode[data-office-count="2"] .office-station:nth-child(1) { left: calc(50% - 45px); bottom: 0; }
+body.office-mode[data-office-count="2"] .office-station:nth-child(2) { left: calc(50% + 45px); bottom: 0; }
+body.office-mode[data-office-count="1"] .office-board::before { --office-stage-glass-height: 132px; }
+body.office-mode[data-office-count="2"] .office-board::before,
+body.office-mode[data-office-count="3"] .office-board::before { --office-stage-glass-height: 118px; }
+/* Three cats share one horizontal row. This deliberately avoids a back-row
+   cat ever covering the two cats in front of it. */
+body.office-mode[data-office-count="3"] .office-station:nth-child(1) { left: 16.5%; top: auto; bottom: 0; }
+body.office-mode[data-office-count="3"] .office-station:nth-child(2) { left: 50%; top: auto; bottom: 0; }
+body.office-mode[data-office-count="3"] .office-station:nth-child(3) { left: 83.5%; top: auto; bottom: 0; }
+body.office-mode[data-office-count="4"] .office-station { width: 110px; height: 118px; }
+body.office-mode[data-office-count="4"] .office-station:nth-child(1) { left: 22%; top: auto; bottom: 128px; }
+body.office-mode[data-office-count="4"] .office-station:nth-child(2) { left: 78%; top: auto; bottom: 128px; }
+body.office-mode[data-office-count="4"] .office-station:nth-child(3) { left: 22%; top: auto; bottom: 0; }
+body.office-mode[data-office-count="4"] .office-station:nth-child(4) { left: 78%; top: auto; bottom: 0; }
+body.office-mode[data-office-count="4"] .office-board::before { --office-stage-glass-height: 246px; }
+body.office-mode[data-office-count="5"] .office-station { width: 110px; height: 118px; }
+body.office-mode[data-office-count="5"] .office-station:nth-child(1) { left: 50%; top: auto; bottom: 240px; }
+body.office-mode[data-office-count="5"] .office-station:nth-child(2) { left: 18%; top: auto; bottom: 120px; }
+body.office-mode[data-office-count="5"] .office-station:nth-child(3) { left: 82%; top: auto; bottom: 120px; }
+body.office-mode[data-office-count="5"] .office-station:nth-child(4) { left: 30%; top: auto; bottom: 0; }
+body.office-mode[data-office-count="5"] .office-station:nth-child(5) { left: 70%; top: auto; bottom: 0; }
+body.office-mode[data-office-count="5"] .office-board::before { --office-stage-glass-height: 358px; }
+/* A large white Japanese-manga balloon, always above the speaker. */
+body.office-mode .office-callout {
+  z-index: 20;
+  width: 196px;
+  max-width: calc(100vw - 12px);
+  gap: 5px;
+  padding: 9px 11px;
+  border-width: 2px;
+  border-radius: 19px 19px 19px 5px;
+  box-shadow: 3px 3px 0 rgba(91,67,57,.2);
+  font-size: 11px;
+  line-height: 1.42;
+  background: rgba(255,255,252,.99);
+}
+body.office-mode .office-callout::after { bottom: -8px; width: 13px; height: 13px; border-width: 2px; }
+body.office-mode .office-callout small { font-size: 10px; line-height: 1.42; }
+body.office-mode .office-nameplate { z-index: 6; }
 body.dusk-rain .ambience { opacity: .55; } body.dusk-rain .ambience i { width: 2px; height: 13px; border-radius: 2px; background: #9ed6ef; box-shadow: none; animation: rain-drop 1.1s linear infinite; } body.dusk-rain .ambience i:nth-child(2) { animation-delay: -.2s; } body.dusk-rain .ambience i:nth-child(3) { animation-delay: -.5s; } body.dusk-rain .ambience i:nth-child(4) { animation-delay: -.8s; }
 @keyframes bubble-bob { 50% { transform: translateY(-5px) rotate(4deg); } }
 @keyframes task-pulse { 50% { transform: scale(1.04); } }
+@keyframes desk-ask { 50% { transform: translateY(-3px) rotate(-.6deg); } }
 @keyframes stamp-pop { 0% { opacity: 0; transform: scale(2.5) rotate(-24deg); } 13% { opacity: 1; transform: scale(1) rotate(-12deg); } 75% { opacity: 1; } 100% { opacity: 0; transform: scale(.88) rotate(-12deg); } }
 @keyframes box-wiggle { to { transform: rotate(3deg) translateY(-2px); } }
 @keyframes long-work { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(2px) rotate(-2deg); } }
